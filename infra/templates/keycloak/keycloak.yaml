@@ -1,4 +1,38 @@
 {{- if .Values.keycloak.enable }}
+{{- if .Values.keycloak.tls.enabled }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: keycloak-internal-tls
+spec:
+  secretName: {{ .Values.keycloak.tls.secretName }}
+  duration: {{ .Values.keycloak.tls.duration }}
+  renewBefore: {{ .Values.keycloak.tls.renewBefore }}
+  privateKey:
+    size: 2048
+  dnsNames:
+    - keycloak
+    - keycloak.{{ .Release.Namespace }}
+    - keycloak.{{ .Release.Namespace }}.svc
+    - keycloak.{{ .Release.Namespace }}.svc.cluster.local
+    - keycloak-ha
+    - keycloak-ha.{{ .Release.Namespace }}
+    - keycloak-ha.{{ .Release.Namespace }}.svc
+    - keycloak-ha.{{ .Release.Namespace }}.svc.cluster.local
+    - {{ .Values.keycloak.ingress.hostname }}
+  usages:
+    - key encipherment
+    - digital signature
+    - server auth
+  issuerRef:
+{{- if gt (len .Values.keycloak.tls.issuerRef) 0 }}
+{{ .Values.keycloak.tls.issuerRef | toYaml | indent 4 }}
+{{- else }}
+    name: {{ .Values.certManager.issuerName }}
+    kind: Issuer
+{{- end }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -8,7 +42,7 @@ metadata:
     app: keycloak
 spec:
   revisionHistoryLimit: 1
-  replicas: 2
+  replicas: {{ .Values.keycloak.replicas }}
   selector:
     matchLabels:
       app: keycloak
@@ -43,7 +77,13 @@ spec:
           - start
           - --hostname={{ .Values.keycloak.ingress.hostname }}
           - --proxy-headers={{ .Values.keycloak.proxyHeaderArg }}
+{{- if .Values.keycloak.tls.enabled }}
+          - --http-enabled=false
+          - --https-certificate-file=/etc/x509/https/tls.crt
+          - --https-certificate-key-file=/etc/x509/https/tls.key
+{{- else }}
           - --http-enabled=true
+{{- end }}
           - --vault-dir=/vault
           - --cache-stack=kubernetes
           # - --log-level=DEBUG
@@ -79,18 +119,23 @@ spec:
         #     -Dkeycloak.migration.dir=/tmp/cfg/
         #     -Dkeycloak.migration.strategy=IGNORE_EXISTING
         ports:
+{{- if .Values.keycloak.tls.enabled }}
         - name: https
           containerPort: 8443
+{{- else }}
+        - name: http
+          containerPort: 8080
+{{- end }}
         resources:
-          requests:
-            memory: "200Mi"
-            cpu: "100m"
-          limits:
-            memory: "2Gi"
-            cpu: "1000m"
+          {{- toYaml .Values.keycloak.resources | nindent 10 }}
         volumeMounts:
         - name: vault
           mountPath: /vault
+{{- if .Values.keycloak.tls.enabled }}
+        - name: tls
+          mountPath: /etc/x509/https
+          readOnly: true
+{{- end }}
         # - name: keycloak-data
         #   mountPath: /etc/krb5.conf
         #   subPath: krb5.conf
@@ -116,6 +161,11 @@ spec:
       - name: vault
         secret:
           secretName: keycloak
+{{- if .Values.keycloak.tls.enabled }}
+      - name: tls
+        secret:
+          secretName: {{ .Values.keycloak.tls.secretName }}
+{{- end }}
       # - name: tmp
       #   emptyDir: {}
       # - name: keycloak-data
@@ -141,12 +191,15 @@ metadata:
     app: keycloak
 spec:
   ports:
+{{- if .Values.keycloak.tls.enabled }}
+  - name: https
+    port: 443
+    targetPort: 8443
+{{- else }}
   - name: http
     port: 8080
     targetPort: 8080
-  # - name: https
-  #   port: 443
-  #   targetPort: 8443
+{{- end }}
   selector:
     app: keycloak
 
@@ -159,9 +212,15 @@ metadata:
     app: keycloak
 spec:
   ports:
+{{- if .Values.keycloak.tls.enabled }}
+  - name: https
+    port: 443
+    targetPort: 8443
+{{- else }}
   - name: http
     port: 8080
     targetPort: 8080
+{{- end }}
   selector:
     app: keycloak
   type: ClusterIP
@@ -173,7 +232,6 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: keycloak
-  annotations:
   {{- with .annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -194,7 +252,11 @@ spec:
               service:
                 name: keycloak
                 port:
-                  number: 80
+{{- if $.Values.keycloak.tls.enabled }}
+                  number: 443
+{{- else }}
+                  number: 8080
+{{- end }}
 {{- end }}
 
 {{- end }}

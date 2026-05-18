@@ -1,0 +1,192 @@
+# k3s homelab values for the Azul infrastructure chart.
+# Target namespace: azul-infra
+# Deploy this file with Argo CD as: path=infra, values=values-k3s-infra.yaml
+# Sized conservatively for a 3-node k3s cluster where each node has ~6 CPU cores,
+# 4Gi RAM, and 100Gi disk. Most stateful services run as single replicas first;
+# scale out only after the base infra is healthy and capacity is confirmed.
+
+certManager:
+  enabled: true
+  selfSigned: true
+  selfSignedIssuerName: azul-infra-selfsigned
+  caCertificateName: azul-infra-ca
+  caSecretName: azul-infra-ca
+  issuerName: azul-infra-ca
+
+networkPolicy:
+  enabled: false
+
+minio:
+  main:
+    enable: true
+    replicas: 1
+    storageClass: longhorn
+    requests:
+      storage: 10Gi
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    ingress:
+      api:
+        enable: true
+        host: minio-api.local
+      console:
+        enable: true
+        host: minio.local
+      ingressClassName: nginx
+      secretName: minio-tls
+      annotations:
+        cert-manager.io/issuer: azul-infra-ca
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
+  backup:
+    # Disabled initially to avoid consuming scarce RAM/disk. Backups should ideally
+    # use storage outside this small k3s cluster.
+    enable: false
+    replicas: 1
+    storageClass: longhorn
+    requests:
+      storage: 10Gi
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    ingress:
+      api:
+        enable: true
+        host: minio-backup-api.local
+      console:
+        enable: true
+        host: minio-backup.local
+      ingressClassName: nginx
+      secretName: minio-backup-tls
+      annotations:
+        cert-manager.io/issuer: azul-infra-ca
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
+opensearch:
+  enable: true
+  name: azul-opensearch
+  harden: false
+  selfSigned: false
+  issuerRef:
+    name: azul-infra-ca
+    kind: Issuer
+  certificateSuffix: azul-infra.svc.cluster.local
+  general:
+    version: 3.2.0
+    replicas: 1
+    setVMMaxMapCount: true
+  nodes:
+    diskSize: "15Gi"
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "1536Mi"
+        cpu: "1000m"
+  ingress:
+    enable: false
+  dashboard:
+    version: 3.2.0
+    ingress:
+      enable: true
+      ingressClassName: nginx
+      host: opensearch-dashboards.local
+      secretName: dashboard-ingress-tls
+      annotations:
+        cert-manager.io/issuer: azul-infra-ca
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
+kafka:
+  enable: true
+  name: azul-kafka
+  replicas: 1
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 250m
+    limits:
+      memory: 1536Mi
+      cpu: 1000m
+  jvmOptions:
+    -Xms: 512m
+    -Xmx: 512m
+  clusterConfig:
+    offsets.topic.replication.factor: 1
+    transaction.state.log.replication.factor: 1
+    transaction.state.log.min.isr: 1
+    auto.create.topics.enable: false
+    default.replication.factor: 1
+    min.insync.replicas: 1
+    num.io.threads: 4
+    num.network.threads: 3
+    num.partitions: 1
+    num.replica.fetchers: 1
+    socket.request.max.bytes: 104857600
+    unclean.leader.election.enable: true
+    message.max.bytes: 4194352
+    compression.type: snappy
+  storage:
+    type: persistent-claim
+    size: 10Gi
+    kraftMetadata: shared
+    deleteClaim: false
+    class: longhorn
+  kafkactl:
+    enable: false
+
+keycloak:
+  enable: true
+  image: quay.io/keycloak/keycloak:26.1
+  replicas: 1
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "100m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  proxyHeaderArg: xforwarded
+  tls:
+    enabled: true
+    secretName: keycloak-internal-tls
+    issuerRef:
+      name: azul-infra-ca
+      kind: Issuer
+  ingress:
+    hostname: keycloak.local
+    secretName: keycloak-tls
+    annotations:
+      cert-manager.io/issuer: azul-infra-ca
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+  postgres:
+    storageClassName: longhorn
+    size: 5Gi
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+# Keep the first infra rollout focused on runtime dependencies.
+# Monitoring/logging can be enabled after OpenSearch/Kafka/MinIO/Keycloak are healthy.
+kube-prometheus-stack:
+  enable: false
+loki:
+  enable: false
+prometheus-blackbox-exporter:
+  enable: false
+prometheus-pushgateway:
+  enable: false

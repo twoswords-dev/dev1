@@ -7,6 +7,19 @@ affinity: {}
 # Any annotations to apply to ALL pods. such as sidecar.istio.io/inject: "false"
 podAnnotations: {}
 
+# Cert-manager integration for certificates shared by infrastructure services.
+# When enabled with selfSigned=true, this chart creates a namespace-local self-signed CA
+# and an Issuer that can be referenced by OpenSearch, Keycloak, and ingress certificates.
+certManager:
+  enabled: false
+  selfSigned: true
+  selfSignedIssuerName: azul-infra-selfsigned
+  caCertificateName: azul-infra-ca
+  caSecretName: azul-infra-ca
+  issuerName: azul-infra-ca
+  duration: 87600h0m0s # ~10 years
+  renewBefore: 8760h0m0s # ~1 year before expiry
+
 # Enable the custom network policy for infrastructure.
 networkPolicy:
   enabled: false
@@ -781,8 +794,23 @@ kafka:
 keycloak:
   enable: true
   image: quay.io/keycloak/keycloak:26.1
+  replicas: 2
+  resources:
+    requests:
+      memory: "200Mi"
+      cpu: "100m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
   # Normally forwarded or xforwarded
   proxyHeaderArg: xforwarded
+  tls:
+    # Enables HTTPS on the Keycloak pod/service using a cert-manager Certificate.
+    enabled: false
+    secretName: keycloak-internal-tls
+    issuerRef: {}
+    duration: 87600h0m0s
+    renewBefore: 8760h0m0s
   ingress:
     hostname: "keycloak.example.internal"
     secretName: keycloak-tls
@@ -790,6 +818,7 @@ keycloak:
   postgres:
     storageClassName: "managed-csi"
     size: 5Gi
+    resources: {}
 
 kube-prometheus-stack:
   fullnameOverride: "kube-prometheus-stack"

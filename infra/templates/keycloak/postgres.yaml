@@ -59,6 +59,10 @@ spec:
         ports:
         - containerPort: 5432
           name: postgresdb
+{{- if .Values.keycloak.postgres.resources }}
+        resources:
+          {{- toYaml .Values.keycloak.postgres.resources | nindent 10 }}
+{{- end }}
         volumeMounts:
         - name: pv-data
           mountPath: /var/lib/postgresql/data

@@ -1,0 +1,94 @@
+# k3s Azul infra rollout
+
+This is the first-pass infra configuration for the local k3s cluster.
+
+Target namespaces:
+
+- Infra chart: `azul-infra`
+- Azul app later: `azul`
+
+## What this config does
+
+Use `infra/values-k3s-infra.yaml` with the `infra` Helm chart.
+
+It enables the runtime dependencies first, sized for the small k3s cluster:
+
+- cert-manager namespace-local CA/Issuer: `azul-infra-ca`
+- OpenSearch with cert-manager-issued internal TLS certs, 1 data node, 15Gi disk, 1Gi request / 1536Mi limit
+- Keycloak with cert-manager-issued HTTPS certs on the pod/service, 1 replica, 512Mi request / 1Gi limit
+- Postgres for Keycloak, 5Gi disk, 256Mi request / 512Mi limit
+- Kafka via Strimzi, 1 broker/controller, 10Gi disk, 1Gi request / 1536Mi limit, replication factors set to 1
+- MinIO main store, 1 replica, 10Gi disk, 256Mi request / 512Mi limit
+- MinIO backup store disabled initially to conserve disk/RAM
+
+Monitoring/logging dependencies are intentionally disabled for the first rollout:
+
+- kube-prometheus-stack
+- Loki
+- blackbox exporter
+- pushgateway
+
+They can be enabled after OpenSearch/Kafka/MinIO/Keycloak are healthy.
+
+## Required cluster prerequisites
+
+cert-manager must be installed before this chart is synced. This cluster already has the cert-manager CRDs.
+
+The following operators/CRDs must also be installed before syncing the infra chart:
+
+- OpenSearch Operator, for `OpenSearchCluster`
+- Strimzi Operator, for `Kafka` and `KafkaNodePool`
+
+## One-time secrets
+
+Do not commit live secrets. Create them in the cluster before syncing with Argo CD:
+
+```bash
+cd infra
+./scripts/create-k3s-infra-secrets.sh
+```
+
+To supply your own passwords, set env vars before running the script, for example:
+
+```bash
+export KEYCLOAK_ADMIN_PASSWORD='change-me'
+export OPENSEARCH_ADMIN_PASSWORD='adminpassword'
+./scripts/create-k3s-infra-secrets.sh
+```
+
+## Argo CD UI settings
+
+Create an app from the Argo CD UI with roughly:
+
+- Repository URL: `http://192.168.10.126:3000/twoswords/azul.git`
+- Revision: this feature branch until merged
+- Path: `infra`
+- Values file: `values-k3s-infra.yaml`
+- Destination cluster: in-cluster
+- Destination namespace: `azul-infra`
+- Sync option: create namespace if needed
+
+## Windows hosts entries
+
+The k3s ingress currently uses `192.168.10.126`. Add entries like these to your Windows hosts file:
+
+```text
+192.168.10.126 keycloak.local
+192.168.10.126 opensearch-dashboards.local
+192.168.10.126 minio.local
+192.168.10.126 minio-api.local
+192.168.10.126 minio-backup.local
+192.168.10.126 minio-backup-api.local
+```
+
+## Notes for Azul app rollout later
+
+After infra is healthy, the Azul app namespace `azul` should trust the CA stored in:
+
+```text
+namespace: azul-infra
+secret: azul-infra-ca
+key: ca.crt
+```
+
+That CA should be copied or bundled into the Azul app CA config before enabling Azul connectivity to OpenSearch/Keycloak/MinIO/Kafka.

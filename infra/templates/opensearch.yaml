@@ -101,11 +101,17 @@ spec:
     encoding: PKCS8
   dnsNames:
     - {{ .Values.opensearch.name }}.{{ .Values.opensearch.certificateSuffix }}
-{{- if .Values.opensearch.selfSigned }}
     - {{ .Values.opensearch.name }}.{{ .Release.Namespace }}
     - {{ .Values.opensearch.name }}.{{ .Release.Namespace }}.svc
     - {{ .Values.opensearch.name }}.{{ .Release.Namespace }}.svc.cluster.local
-{{- end }}
+    - {{ .Values.opensearch.name }}-dashboards
+    - {{ .Values.opensearch.name }}-dashboards.{{ .Release.Namespace }}
+    - {{ .Values.opensearch.name }}-dashboards.{{ .Release.Namespace }}.svc
+    - {{ .Values.opensearch.name }}-dashboards.{{ .Release.Namespace }}.svc.cluster.local
+    - {{ .Values.opensearch.name }}-masters
+    - {{ .Values.opensearch.name }}-masters.{{ .Release.Namespace }}
+    - {{ .Values.opensearch.name }}-masters.{{ .Release.Namespace }}.svc
+    - {{ .Values.opensearch.name }}-masters.{{ .Release.Namespace }}.svc.cluster.local
     - {{ .Values.opensearch.name }}-masters-0.{{ .Values.opensearch.certificateSuffix }}
     - {{ .Values.opensearch.name }}-masters-1.{{ .Values.opensearch.certificateSuffix }}
     - {{ .Values.opensearch.name }}-masters-2.{{ .Values.opensearch.certificateSuffix }}
