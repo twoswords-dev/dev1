@@ -13,6 +13,42 @@ certManager:
   caSecretName: azul-infra-ca
   issuerName: azul-infra-ca
 
+operators:
+  strimzi:
+    enabled: true
+  opensearch:
+    enabled: true
+
+strimzi-operator:
+  replicas: 1
+  watchNamespaces:
+    - azul-infra
+  watchAnyNamespace: false
+  labelsExclusionPattern: argocd.argoproj.io/instance
+  generateNetworkPolicy: false
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 384Mi
+      cpu: 500m
+
+opensearch-operator:
+  installCRDs: true
+  manager:
+    watchNamespace: azul-infra
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 384Mi
+        cpu: 500m
+  webhook:
+    certManager:
+      enabled: true
+
 networkPolicy:
   enabled: false
 

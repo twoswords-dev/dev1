@@ -13,6 +13,8 @@ Use `infra/values-k3s-infra.yaml` with the `infra` Helm chart.
 
 It enables the runtime dependencies first, sized for the small k3s cluster:
 
+- Strimzi Operator, namespace-scoped to `azul-infra`, with Argo CD label exclusion enabled
+- OpenSearch Operator, namespace-scoped to `azul-infra`, with CRDs installed by Helm
 - cert-manager namespace-local CA/Issuer: `azul-infra-ca`
 - OpenSearch with cert-manager-issued internal TLS certs, 1 data node, 15Gi disk, 1Gi request / 1536Mi limit
 - Keycloak with cert-manager-issued HTTPS certs on the pod/service, 1 replica, 512Mi request / 1Gi limit
@@ -34,10 +36,9 @@ They can be enabled after OpenSearch/Kafka/MinIO/Keycloak are healthy.
 
 cert-manager must be installed before this chart is synced. This cluster already has the cert-manager CRDs.
 
-The following operators/CRDs must also be installed before syncing the infra chart:
+The infra chart now includes the Strimzi and OpenSearch Operator Helm charts as optional dependencies, enabled by `values-k3s-infra.yaml`.
 
-- OpenSearch Operator, for `OpenSearchCluster`
-- Strimzi Operator, for `Kafka` and `KafkaNodePool`
+If Argo CD reports a dry-run error for newly-created CRDs on first sync, retry the sync after the CRDs are established, or set `SkipDryRunOnMissingResource=true` on the Argo CD application.
 
 ## One-time secrets
 

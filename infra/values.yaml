@@ -20,6 +20,24 @@ certManager:
   duration: 87600h0m0s # ~10 years
   renewBefore: 8760h0m0s # ~1 year before expiry
 
+operators:
+  strimzi:
+    enabled: false
+  opensearch:
+    enabled: false
+
+# Values for the optional Strimzi dependency when operators.strimzi.enabled=true.
+strimzi-operator:
+  watchNamespaces: []
+  watchAnyNamespace: false
+  labelsExclusionPattern: argocd.argoproj.io/instance
+
+# Values for the optional OpenSearch Operator dependency when operators.opensearch.enabled=true.
+opensearch-operator:
+  installCRDs: true
+  manager:
+    watchNamespace: ""
+
 # Enable the custom network policy for infrastructure.
 networkPolicy:
   enabled: false
