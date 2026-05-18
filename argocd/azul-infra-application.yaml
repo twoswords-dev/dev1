@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: azul-infra
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: http://192.168.10.126:3000/twoswords/azul.git
+    targetRevision: feat/k3s-infra-cert-manager
+    path: infra
+    helm:
+      valueFiles:
+        - values-k3s-infra.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: azul-infra
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
