@@ -145,6 +145,8 @@ opensearch:
 kafka:
   enable: true
   name: azul-kafka
+  version: 4.2.0
+  metadataVersion: 4.2-IV0
   replicas: 1
   resources:
     requests:
