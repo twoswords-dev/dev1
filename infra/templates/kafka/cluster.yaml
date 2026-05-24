@@ -4,6 +4,8 @@ apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
 metadata:
   name: nodes
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
   labels:
     strimzi.io/cluster: {{ .Values.kafka.name }}
 spec:
@@ -62,6 +64,7 @@ kind: Kafka
 metadata:
   name: {{ .Values.kafka.name }}
   annotations:
+    argocd.argoproj.io/sync-wave: "10"
     strimzi.io/node-pools: enabled
     strimzi.io/kraft: enabled
 spec:

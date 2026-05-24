@@ -160,6 +160,8 @@ apiVersion: opensearch.org/v1
 kind: OpenSearchCluster
 metadata:
   name: {{ .Values.opensearch.name }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
 spec:
   general:
     {{- if .Values.opensearch.harden }}
