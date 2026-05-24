@@ -98,22 +98,22 @@ limitRange:
   spec:
     limits:
       - defaultRequest:
-          cpu: 100m
-          memory: "300Mi"
+          cpu: 50m
+          memory: "128Mi"
         default:
-          cpu: 1000m
-          memory: "2Gi"
+          cpu: 500m
+          memory: "512Mi"
         type: Container
 
 # default values for plugin HPA, unless overwritten individually
 coreHPA:
   averageUtilization: 100
-  maxReplicas: 3
+  maxReplicas: 1
   minReplicas: 1
 
 # Default HPA values for plugins not using git-sync unless overwritten by individual component.
 pluginHPA:
-  maxReplicas: 10
+  maxReplicas: 1
   minReplicas: 1
   averageUtilization: 100
   # EXPERIMENTAL FEATURE - BE VERY CAREFUL
@@ -130,7 +130,7 @@ pluginHPA:
 
 # Default HPA values for plugins using git-sync unless overwritten by individual component.
 pluginSyncHPA:
-  maxReplicas: 10
+  maxReplicas: 1
   minReplicas: 1
   averageUtilization: 100
   useSmartScaler: false
@@ -263,10 +263,10 @@ external:
     # If a plugin is inactive for longer than this duration it will re-process all of it's events through its historic feed.
     consumerGroupRetentionDays: 30
     # default replication factor of Azul's kafka topics
-    topicDefaultReplicas: 3
+    topicDefaultReplicas: 1
     # default number of partitions (max replicas of dispatcher) for kafka topics
     # if you increase/decrease this number, you will need to alter prefix and reprocess existing kafka data to see the change.
-    topicDefaultPartitions: 4
+    topicDefaultPartitions: 1
     # Override specific kafka topic properties.
     # This is where you can override default ageoff for specific kafka topics that Azul uses.
     # If you want to configure topics for specific sources, you should configure in the `sources: {}` section
@@ -325,11 +325,11 @@ redis:
   enabled: true
   resources:
     limits:
-      cpu: 1
-      memory: 1Gi
-    requests:
       cpu: 500m
       memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
 
   pvcSize: "1Gi"
 
@@ -393,11 +393,11 @@ apiServices:
     # resources may require adjustment based on workloads.
     resources:
       limits:
-        cpu: 1000m
-        memory: 4Gi
-      requests:
         cpu: 500m
-        memory: 4Gi
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 512Mi
 
 stats:
   enabled: false
@@ -478,7 +478,7 @@ stats:
 
 #  Stats collector for kafka consumer lag and consumer lag offset.
 burrow:
-  enabled: true
+  enabled: false
   resources:
     limits:
       cpu: 500m
@@ -542,21 +542,21 @@ recovery:
   backup:
     resources:
       requests:
-        memory: "4Gi"
-        cpu: "1"
+        memory: "512Mi"
+        cpu: "100m"
       limits:
-        memory: "4Gi"
-        cpu: "1"
+        memory: "1Gi"
+        cpu: "500m"
   # generally you'd want restore to have more 'capacity' than backup as you run it in emergencies,
   # however it'll mostly be limited by performance of dispatcher
   restore:
     resources:
       requests:
-        memory: "4Gi"
-        cpu: "1"
+        memory: "512Mi"
+        cpu: "100m"
       limits:
-        memory: "4Gi"
-        cpu: "1"
+        memory: "1Gi"
+        cpu: "500m"
 
 # Configuration of the Azul documentation container.
 docs:
@@ -714,10 +714,10 @@ web:
     # If statement matches and failures are logged as "debug" console messages in the
     # web UI, and information for the schema can be spotted via the "debug" tab.
     binary_external_links: []
-  replicas: 2
+  replicas: 1
   #topologySpreadConstraints: # Optional (labelSelector is pre-definied)
   pdb:
-    enabled: true
+    enabled: false
     minAvailable: 1
 
 # Message and event coordinator.
@@ -753,7 +753,7 @@ dispatcher:
           minAvailable: 1
         resources:
           requests:
-            memory: "1Gi"
+            memory: "512Mi"
             cpu: "100m"
           limits:
             memory: "1Gi"
@@ -796,11 +796,11 @@ dispatcher:
           minAvailable: 1
         resources:
           requests:
-            memory: "2Gi"
+            memory: "512Mi"
             cpu: "100m"
           limits:
-            memory: "2Gi"
-            cpu: "1000m"
+            memory: "1Gi"
+            cpu: "500m"
         env:
           # size of cache used for events being consumed
           # this cache is useful - hit rate of 50% after historical catches up with live processing
@@ -884,11 +884,11 @@ migration:
         # how many binaries & sources you have.
         # Recommend this be increased to something like 32GB & 8 cpu for a production deployment.
         requests:
-          memory: "4Gi"
-          cpu: "500m"
+          memory: "1Gi"
+          cpu: "100m"
         limits:
-          memory: "8Gi"
-          cpu: "1"
+          memory: "2Gi"
+          cpu: "500m"
 
 # Metadata storage.
 metastore:
@@ -896,12 +896,12 @@ metastore:
   disable_entropy_similarity: false
   # after updating these settings you need to re-index or wait for the old index to age off to take affect.
   status_index:
-    number_of_shards: 3
-    number_of_replicas: 2
+    number_of_shards: 1
+    number_of_replicas: 0
   # after updating these settings you will need to re-index for it to take affect.
   plugin_index:
-    number_of_shards: 3
-    number_of_replicas: 2
+    number_of_shards: 1
+    number_of_replicas: 0
   # Service for metastore to hit dispatcher instances
   # Should not need to be changed
   env: {}
@@ -911,7 +911,7 @@ metastore:
       error_log: true
       logLevel: "WARN"
       minReplicas: 1
-      maxReplicas: 2
+      maxReplicas: 1
       command:
         - azul-metastore
         - age-off
@@ -927,7 +927,7 @@ metastore:
       error_log: true
       logLevel: "WARN"
       minReplicas: 1
-      maxReplicas: 5
+      maxReplicas: 1
       command:
         - azul-metastore
         - ingest-binary
@@ -943,7 +943,7 @@ metastore:
       error_log: true
       logLevel: "WARN"
       minReplicas: 1
-      maxReplicas: 2
+      maxReplicas: 1
       command:
         - azul-metastore
         - ingest-plugin
@@ -959,7 +959,7 @@ metastore:
       error_log: true
       logLevel: "WARN"
       minReplicas: 1
-      maxReplicas: 5
+      maxReplicas: 1
       command:
         - azul-metastore
         - ingest-status
@@ -974,7 +974,7 @@ metastore:
 # API server configuration
 restapi:
   minReplicas: 1
-  maxReplicas: 4
+  maxReplicas: 1
   # requires >1 replica
   #topologySpreadConstraints: # Optional (labelSelector is pre-definied)
   pdb:
@@ -982,10 +982,10 @@ restapi:
     minAvailable: 1
   resources:
     requests:
-      memory: "4Gi"
-      cpu: "1000m"
+      memory: "1Gi"
+      cpu: "250m"
     limits:
-      memory: "8Gi"
+      memory: "2Gi"
       cpu: "1000m"
   # NOTE - if these are changed and you are using argoCD you have to delete the statefulset
   #        for the size increase to work, this is an argoCD limitation.
@@ -1009,8 +1009,8 @@ restapi:
     ca_bundle: "/cafile/ca.crt"
     host: "0.0.0.0"
     port: "8000"
-    processWorkers: 2
-    asyncioWorkers: 2
+    processWorkers: 1
+    asyncioWorkers: 1
     logLevel: "INFO"
   env: {}
 
@@ -1300,11 +1300,11 @@ plugins:
     type: standard
     enabled: true
     pvc:
-      size: "256Gi"
+      size: "20Gi"
     server:
       enabled: true
       minReplicas: 1
-      maxReplicas: 3
+      maxReplicas: 1
       averageUtilization: 500
       resources:
         requests:
@@ -1431,7 +1431,7 @@ plugins:
     # cronjob schedule to clean up hunts
     schedule: "0 2 * * *"
     pvc:
-      size: "1000Gi"
+      size: "20Gi"
     # Group config applied to all retrohunt containers and extraContainers.
     config:
       # Memory limits disabled for this plugin because it causes OOM when it shouldn't due to cgroups misbehaving.
@@ -1568,11 +1568,11 @@ plugins:
             image: plugin-retrohunt
             resources:
               requests:
-                memory: "4Gi"
+                memory: "1Gi"
                 cpu: "100m"
               limits:
-                memory: "4Gi"
-                cpu: "1000m"
+                memory: "2Gi"
+                cpu: "500m"
             command:
               - azul-plugin-retroworker
             volumeMounts:
@@ -1604,11 +1604,11 @@ plugins:
             image: plugin-retrohunt
             resources:
               requests:
-                memory: "8Gi"
+                memory: "1Gi"
                 cpu: "100m"
               limits:
-                memory: "16Gi"
-                cpu: "4000m"
+                memory: "2Gi"
+                cpu: "1000m"
             command:
               - azul-plugin-retroindexer
               - "--indexer-name"
@@ -1762,11 +1762,11 @@ plugins:
     enabled: true
     resources:
       requests:
+        memory: "512Mi"
+        cpu: "100m"
+      limits:
         memory: "1Gi"
         cpu: "500m"
-      limits:
-        memory: "2Gi"
-        cpu: "1500m"
     sources: {}
 
   # Suricata rules scanning.
@@ -1797,11 +1797,11 @@ plugins:
       mandiant-capa: # Needs more resources to prevent it cutting out when communicating with dispatcher causing 500 errors on dispatcher.
         resources:
           requests:
-            memory: "6Gi"
-            cpu: "500m"
+            memory: "1Gi"
+            cpu: "100m"
           limits:
-            memory: "6Gi"
-            cpu: "1000m"
+            memory: "2Gi"
+            cpu: "500m"
       certificates: {}
       debloat:
         tmp: "7Gi" # Needs lots of tmp to shrink down even large binaries.
@@ -1825,33 +1825,33 @@ plugins:
       entrypointcheck:
         resources:
           limits:
-            memory: "4Gi"
+            memory: "1Gi"
       exiftool:
         tmp: "300Mi"
         resources:
           requests:
-            memory: "2Gi"
+            memory: "512Mi"
           limits:
-            memory: "4Gi"
+            memory: "1Gi"
       export-hashes: {}
       floss:
         tmp: "2Gi"
         resources:
           requests:
-            memory: "4Gi"
-            cpu: "500m"
+            memory: "1Gi"
+            cpu: "100m"
           limits:
-            memory: "4Gi"
-            cpu: "1000m"
+            memory: "2Gi"
+            cpu: "500m"
       ghidra:
         tmp: "1Gi"
         resources:
           requests:
-            memory: "4Gi"
-            cpu: "1"
+            memory: "1Gi"
+            cpu: "100m"
           limits:
-            memory: "4Gi"
-            cpu: "2"
+            memory: "2Gi"
+            cpu: "500m"
         volumes:
           - name: ghidra-config-cache
             emptyDir:
@@ -1866,9 +1866,9 @@ plugins:
         tmp: "2Gi" # Needs lots of space to decompile larger files. (FUTURE: may need to fine tune)
         resources:
           requests:
-            memory: "4Gi" # (FUTURE: may need to fine tune)
+            memory: "1Gi" # Homelab-sized; increase for large files.
           limits:
-            memory: "16Gi" # In testing, a 100MB file required 10Gi to decompile, so increase ceiling for headroom (FUTURE: may need to fine tune based on workloads)
+            memory: "2Gi" # Homelab-sized; increase for large files.
       js-deobf: {}
       lief-elf:
         image: plugin-lief
@@ -1940,9 +1940,9 @@ plugins:
         tmp: "4Gi"
         resources:
           requests:
-            memory: "4Gi"
+            memory: "1Gi"
           limits:
-            memory: "8Gi"
+            memory: "2Gi"
         config:
           # should handle larger files than most plugins to try and extract them.
           PLUGIN_FILTER_MAX_CONTENT_SIZE: "4GiB"

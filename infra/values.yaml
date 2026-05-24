@@ -101,16 +101,16 @@ minio:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     secretName: s3-keys
 
-    # multiply this with requests.storage to get total size of minio
-    replicas: 3
+    # Homelab-sized default: one MinIO pod. For production, use at least 3 replicas.
+    replicas: 1
 
     resources:
       requests:
-        memory: "4Gi"
-        cpu: "500m"
+        memory: "256Mi"
+        cpu: "100m"
       limits:
-        memory: "4Gi"
-        cpu: "1"
+        memory: "512Mi"
+        cpu: "500m"
 
     labels:
       app: s3-store-minio
@@ -120,7 +120,7 @@ minio:
 
     storageClass: managed-csi
     requests:
-      storage: 50Gi
+      storage: 10Gi
 
     ingress:
       api:
@@ -137,20 +137,20 @@ minio:
   # Backup instance, used to store Kafka events
   # NOT RECOMMENDED FOR PRODUCTION USE - put your backups external to Kubernetes!
   backup:
-    enable: true
+    # Disabled by default for small clusters. Use external/object storage for backups where possible.
+    enable: false
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     secretName: s3-backup-keys
 
-    # multiply this with requests.storage to get total size of minio
-    replicas: 3
+    replicas: 1
 
     resources:
       requests:
-        memory: "4Gi"
-        cpu: "500m"
+        memory: "256Mi"
+        cpu: "100m"
       limits:
-        memory: "4Gi"
-        cpu: "1"
+        memory: "512Mi"
+        cpu: "500m"
     labels:
       app: s3-store-minio-backup
       storage: minio-disk-backup
@@ -159,7 +159,7 @@ minio:
 
     storageClass: managed-csi
     requests:
-      storage: 50Gi
+      storage: 10Gi
 
     ingress:
       api:
@@ -184,22 +184,20 @@ opensearch:
 
   general:
     version: 3.2.0
-    replicas: 3
+    replicas: 1
     setVMMaxMapCount: true
     # defaultRepo: docker.io/opensearchproject
 
   nodes:
     # The amount of storage PER data node
-    diskSize: "50Gi"
+    diskSize: "15Gi"
     resources:
-      # Request should equal limit unless you know what you
-      # are doing
       requests:
-        memory: "2Gi"
+        memory: "1Gi"
         cpu: "500m"
       limits:
-        memory: "2Gi"
-        cpu: "500m"
+        memory: "1536Mi"
+        cpu: "1000m"
 
   selfSigned: true
   # OR
@@ -753,19 +751,19 @@ kafka:
   version: 4.0.0
   metadataVersion: 4.0-IV3
 
-  replicas: 3
+  replicas: 1
   resources:
     requests:
-      memory: 4Gi
-      cpu: 1000m
+      memory: 1Gi
+      cpu: 250m
     limits:
-      memory: 4Gi
+      memory: 1536Mi
       cpu: 1000m
   jvmOptions:
     # leave room for segment file cache
     # should probably be 1/2 of the ram
-    -Xms: 2g
-    -Xmx: 2g
+    -Xms: 512m
+    -Xmx: 512m
 
   # Override rack topology to be different from topologySpreadConstraints's topology key OR
   # Set the rack Topology without having a topologySpreadConstraints.
@@ -784,7 +782,7 @@ kafka:
 
   storage:
     type: persistent-claim
-    size: 100Gi
+    size: 10Gi
     kraftMetadata: shared
     deleteClaim: false # do not delete pvcs if kafka is disabled
     class: managed-csi
@@ -793,17 +791,17 @@ kafka:
   antiAgentPool: ""
 
   clusterConfig:
-    offsets.topic.replication.factor: 3
-    transaction.state.log.replication.factor: 3
-    transaction.state.log.min.isr: 2
+    offsets.topic.replication.factor: 1
+    transaction.state.log.replication.factor: 1
+    transaction.state.log.min.isr: 1
     # DO NOT ENABLE - manually define topics instead
     auto.create.topics.enable: false
-    default.replication.factor: 3
-    min.insync.replicas: 2
-    num.io.threads: 8
-    num.network.threads: 5
-    num.partitions: 4
-    num.replica.fetchers: 2
+    default.replication.factor: 1
+    min.insync.replicas: 1
+    num.io.threads: 4
+    num.network.threads: 3
+    num.partitions: 1
+    num.replica.fetchers: 1
     socket.request.max.bytes: 104857600
     unclean.leader.election.enable: true
     message.max.bytes: 4194352
@@ -812,14 +810,14 @@ kafka:
 keycloak:
   enable: true
   image: quay.io/keycloak/keycloak:26.1
-  replicas: 2
+  replicas: 1
   resources:
     requests:
-      memory: "200Mi"
+      memory: "512Mi"
       cpu: "100m"
     limits:
-      memory: "2Gi"
-      cpu: "1000m"
+      memory: "1Gi"
+      cpu: "500m"
   # Normally forwarded or xforwarded
   proxyHeaderArg: xforwarded
   tls:
@@ -840,7 +838,8 @@ keycloak:
 
 kube-prometheus-stack:
   fullnameOverride: "kube-prometheus-stack"
-  enable: true
+  # Disabled by default for small clusters; enable after core infra is healthy.
+  enable: false
   namespaceOverride: ""
   alertmanager:
     enabled: false
@@ -1123,10 +1122,10 @@ kube-prometheus-stack:
       # Resource limits & requests
       resources:
         requests:
-          memory: 8Gi
-          cpu: "500m"
+          memory: 1Gi
+          cpu: "250m"
         limits:
-          memory: 16Gi
+          memory: 2Gi
           cpu: "1000m"
 
       # Prometheus StorageSpec for persistent data
@@ -1139,7 +1138,7 @@ kube-prometheus-stack:
             accessModes: ["ReadWriteOnce"]
             resources:
               requests:
-                storage: 50Gi
+                storage: 10Gi
 
       additionalScrapeConfigs:
         - job_name: "kubernetes-pods"
@@ -1222,14 +1221,15 @@ kube-prometheus-stack:
           pullPolicy: IfNotPresent
         resources:
           limits:
-            cpu: 1
-            memory: 4Gi
-          requests:
             cpu: 500m
-            memory: 1Gi
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
 
 loki:
-  enable: true
+  # Disabled by default for small clusters; enable after core infra is healthy.
+  enable: false
   serviceAccount:
     # annotations:
     #   # Example to disable RBAC for the service account
@@ -1246,22 +1246,22 @@ loki:
     replicas: 1
     persistence:
       enableStatefulSetAutoDeletePVC: false
-      size: 50Gi
+      size: 10Gi
     resources:
       limits:
-        cpu: 1
-        memory: 8Gi
-      requests:
         cpu: 500m
-        memory: 2Gi
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 512Mi
     memcachedExporter:
       resources:
         limits:
-          cpu: 1
-          memory: 8Gi
-        requests:
           cpu: 500m
-          memory: 2Gi
+          memory: 512Mi
+        requests:
+          cpu: 100m
+          memory: 256Mi
   # Disable the Simple Scalable Deployment (SSD) Mode replicas
   write:
     # -- Number of replicas for the write
@@ -1332,7 +1332,7 @@ loki:
     enabled: false
 
 prometheus-blackbox-exporter:
-  enable: true
+  enable: false
 
   ## Override the namespace. Empty means use the Helm release namespace.
   namespaceOverride: ""
@@ -1373,7 +1373,7 @@ prometheus-blackbox-exporter:
       cpu: 30m
 
 prometheus-pushgateway:
-  enable: true
+  enable: false
   # Provide a namespace to substitute for the namespace on resources. Empty means use the Helm release namespace.
   namespaceOverride: ""
 
