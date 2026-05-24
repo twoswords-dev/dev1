@@ -841,7 +841,7 @@ keycloak:
 kube-prometheus-stack:
   fullnameOverride: "kube-prometheus-stack"
   enable: true
-  namespaceOverride: "namespace"
+  namespaceOverride: ""
   alertmanager:
     enabled: false
   # Create default rules for monitoring the cluster
@@ -1334,8 +1334,8 @@ loki:
 prometheus-blackbox-exporter:
   enable: true
 
-  ## Override the namespace
-  namespaceOverride: "namespace"
+  ## Override the namespace. Empty means use the Helm release namespace.
+  namespaceOverride: ""
 
   ## set to true to add the release label so scraping of the servicemonitor with kube-prometheus-stack works out of the box
   releaseLabel: true
@@ -1374,13 +1374,13 @@ prometheus-blackbox-exporter:
 
 prometheus-pushgateway:
   enable: true
-  # Provide a namespace to substitude for the namespace on resources
-  namespaceOverride: "namespace"
+  # Provide a namespace to substitute for the namespace on resources. Empty means use the Helm release namespace.
+  namespaceOverride: ""
 
   # Enable this if you're using https://github.com/coreos/prometheus-operator
   serviceMonitor:
     enabled: true
-    namespace: namespace
+    namespace: ""
 
   image:
     pullPolicy: IfNotPresent

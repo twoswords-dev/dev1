@@ -35,10 +35,12 @@ be installed outside the K8s cluster on dedicated hardware or an equivalent mana
 Currently this includes:
 
 - Opensearch
+- OpenSearch Operator (optional Helm dependency)
 - Minio
 - Redis
 - Keycloak
 - Kafka
+- Strimzi Kafka Operator (optional Helm dependency)
 
 Data safety is not currently guaranteed between different versions of the `infra` chart.
 PVCs may be deleted during an upgrade.

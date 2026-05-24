@@ -31,23 +31,30 @@ functionality.
 
 Requirements:
 
-- The Strimzi operator must be installed, with the following parameters set:
-  - In install/cluster-operator/060-Deployment-\*.yaml, _add_ an environmental variable with
-    the following:
-    - `STRIMZI_LABELS_EXCLUSION_PATTERN` = `argocd.argoproj.io/instance`
-    - **If you are using ArgoCD**, this is required to avoid it deleting your data - if this
-      is not set Strimzi will copy ArgoCD's annotations from the Strimzi deployment to the PVCs
-      and Argo, not being aware of these PVCs will try to continually delete them.
-  - In install/cluster-operator/060-Deployment-\*.yaml, _replace_ an environmental variable with
-    the following:
-    - `STRIMZI_NAMEPSACE` = `"*"` (or the name of the namespace you want Strimzi to watch - i.e. where you are deploying this chart)
-    - This is required if you are deploying Azul in a namespace outside of where Strimzi is
-      deployed, which is required to avoid conflicts with namespaced restrictions that Azul has
-      such as network policies.
+- The Strimzi operator must be installed before the Kafka custom resources reconcile.
+- This chart can install Strimzi as part of the same Helm/Argo CD deployment by setting:
 
-For upgrades of kafka refer to the strimzi kafka documentation about version and compatibility of upgrades.
+```yaml
+operators:
+  strimzi:
+    enabled: true
 
-As well as updating strimzi operators(https://strimzi.io/)
+strimzi-operator:
+  watchNamespaces:
+    - <infra namespace>
+  watchAnyNamespace: false
+  labelsExclusionPattern: argocd.argoproj.io/instance
+```
+
+  - `labelsExclusionPattern` is required when using Argo CD. Without it, Strimzi can copy
+    Argo CD labels to generated PVCs and Argo CD may try to prune them.
+  - Set `watchAnyNamespace: true` only if the operator must watch every namespace. Otherwise,
+    prefer `watchNamespaces` with the namespace where this infra chart is deployed.
+- If you install Strimzi outside this chart, configure the equivalent operator environment:
+  - `STRIMZI_LABELS_EXCLUSION_PATTERN=argocd.argoproj.io/instance`
+  - `STRIMZI_NAMESPACE=<infra namespace>` or `STRIMZI_NAMESPACE=*`
+
+For upgrades of Kafka, refer to the Strimzi documentation for version and compatibility guidance: https://strimzi.io/
 
 ### Minio
 
@@ -77,12 +84,26 @@ management of the tool.
 - This will automatically provision a self-signed CA for the purposes of inter-node
   communication and for the internal service. You can also supply your own Cert Manager
   CA if you have one available.
-- Install the OpenSearch Operator (if you haven't disabled OpenSearch):
+- Install the OpenSearch Operator (if you haven't disabled OpenSearch). This chart can install
+  it as part of the same Helm/Argo CD deployment by setting:
 
-```bash
-helm repo add opensearch-operator https://opensearch-project.github.io/opensearch-k8s-operator/
-helm install opensearch-operator opensearch-operator/opensearch-operator
+```yaml
+operators:
+  opensearch:
+    enabled: true
+
+opensearch-operator:
+  installCRDs: true
+  manager:
+    watchNamespace: <infra namespace>
 ```
+
+  Alternatively, install it outside this chart:
+
+  ```bash
+  helm repo add opensearch-operator https://opensearch-project.github.io/opensearch-k8s-operator/
+  helm install opensearch-operator opensearch-operator/opensearch-operator
+  ```
 
   - To upgrade for OpenSearch 3.x or later, run a Helm upgrade:
 
