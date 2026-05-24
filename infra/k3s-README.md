@@ -71,16 +71,23 @@ Create an app from the Argo CD UI with roughly:
 
 ## Windows hosts entries
 
-The k3s ingress currently uses `192.168.10.126`. Add entries like these to your Windows hosts file:
+The k3s ingress-nginx LoadBalancer currently advertises `192.168.10.111`, `192.168.10.112`, and `192.168.10.113`. Add entries like these to your Windows hosts file, using any one of those ingress IPs:
 
 ```text
-192.168.10.126 keycloak.local
-192.168.10.126 opensearch-dashboards.local
-192.168.10.126 minio.local
-192.168.10.126 minio-api.local
-192.168.10.126 minio-backup.local
-192.168.10.126 minio-backup-api.local
+192.168.10.111 keycloak.local
+192.168.10.111 opensearch-dashboards.local
+192.168.10.111 minio.local
+192.168.10.111 minio-api.local
 ```
+
+Configured ingress URLs from `values-k3s-infra.yaml`:
+
+- Keycloak: `https://keycloak.local`
+- OpenSearch Dashboards: `https://opensearch-dashboards.local`
+- MinIO console: `https://minio.local`
+- MinIO S3 API: `https://minio-api.local`
+
+The OpenSearch API itself is intentionally not exposed through ingress in this small-cluster profile; Azul should use the in-cluster service endpoint.
 
 ## Notes for Azul app rollout later
 
