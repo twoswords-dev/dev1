@@ -118,7 +118,7 @@ minio:
       allow-ingress-minio: "true"
       allow-connect-minio-cluster: "true"
 
-    storageClass: managed-csi
+    storageClass: longhorn
     requests:
       storage: 10Gi
 
@@ -157,7 +157,7 @@ minio:
       allow-ingress-minio: "true"
       allow-connect-minio-cluster: "true"
 
-    storageClass: managed-csi
+    storageClass: longhorn
     requests:
       storage: 10Gi
 
@@ -785,7 +785,7 @@ kafka:
     size: 10Gi
     kraftMetadata: shared
     deleteClaim: false # do not delete pvcs if kafka is disabled
-    class: managed-csi
+    class: longhorn
 
   matchAgentPool: ""
   antiAgentPool: ""
@@ -832,7 +832,7 @@ keycloak:
     secretName: keycloak-tls
     annotations: {}
   postgres:
-    storageClassName: "managed-csi"
+    storageClassName: "longhorn"
     size: 5Gi
     resources: {}
 
@@ -923,7 +923,7 @@ kube-prometheus-stack:
     persistence:
       type: pvc
       enabled: true
-      storageClassName: default
+      storageClassName: longhorn
       accessModes:
         - ReadWriteOnce
       size: 10Gi
@@ -1134,7 +1134,7 @@ kube-prometheus-stack:
         # Using PersistentVolumeClaim
         volumeClaimTemplate:
           spec:
-            storageClassName: default
+            storageClassName: longhorn
             accessModes: ["ReadWriteOnce"]
             resources:
               requests:

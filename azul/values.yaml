@@ -28,7 +28,7 @@ affinity: {}
 pipconfig: null
 
 # K8s storage class name to use for all PVCs
-storageClassName: "default"
+storageClassName: "longhorn"
 
 # Name of ConfigMap that contains CA bundle to trust.
 # If empty, default certificates supplied by debian will be used
