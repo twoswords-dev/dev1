@@ -8,8 +8,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: http://192.168.10.126:3000/twoswords/azul.git
-    targetRevision: feat/k3s-infra-cert-manager
+    repoURL: http://192.168.10.150:3002/twoswords/azul-app.git
+    targetRevision: azul-old
     path: infra
     helm:
       valueFiles:
