@@ -2,8 +2,9 @@
 # Target namespace: azul-infra
 # Deploy this file with Argo CD as: path=infra, values=values-k3s-infra.yaml
 # Sized conservatively for a 3-node k3s cluster with about 12 CPU cores,
-# 12Gi RAM, and ~200Gi total disk. Stateful services run as single replicas first;
-# scale out only after the base infra is healthy and capacity is confirmed.
+# 12Gi RAM, and ~200Gi total disk. Most stateful services run as single replicas first;
+# OpenSearch uses two real nodes because the operator's temporary bootstrap node is removed
+# after initialization and a single remaining cluster-manager can get stuck without quorum.
 
 certManager:
   enabled: true
@@ -118,7 +119,7 @@ opensearch:
   certificateSuffix: azul-infra.svc.cluster.local
   general:
     version: 3.2.0
-    replicas: 1
+    replicas: 2
     setVMMaxMapCount: true
   nodes:
     diskSize: "10Gi"
