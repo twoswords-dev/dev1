@@ -3,9 +3,10 @@
 # Deploy this file with Argo CD as: path=infra, values=values-k3s-infra.yaml
 # Sized conservatively for a 3-node k3s cluster with about 12 CPU cores,
 # 12Gi RAM, and ~200Gi total disk. Stateful services run as single replicas first.
-# OpenSearch is configured as a single-node development/testing cluster with
-# discovery.type=single-node. This disables HA; if the node or PVC is lost, the
-# OpenSearch data/cluster state is lost.
+# OpenSearch is configured as a single-node development/testing cluster via the
+# operator replica count. This disables HA; if the node or PVC is lost, the
+# OpenSearch data/cluster state is lost. Do not set discovery.type=single-node
+# with this operator because it also injects cluster.initial_master_nodes.
 
 certManager:
   enabled: true
@@ -124,8 +125,6 @@ opensearch:
     setVMMaxMapCount: true
   nodes:
     diskSize: "10Gi"
-    additionalConfig:
-      discovery.type: single-node
     resources:
       requests:
         memory: "1Gi"
