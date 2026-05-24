@@ -220,6 +220,10 @@ spec:
         generate: false
         secret:
           name: {{ .Values.opensearch.name }}-certs
+        # OpenSearch 2.x/3.x expects admin DNs on the HTTP TLS config. The
+        # transport.adminDn field is deprecated and is not sufficient for
+        # securityadmin.sh with the OpenSearch 3 operator.
+        adminDn: ["CN=OpenSearch_Admin.{{ .Values.opensearch.certificateSuffix }}", ]
 
   dashboards:
     {{- if .Values.opensearch.harden }}
