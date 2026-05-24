@@ -7,6 +7,7 @@
 # operator replica count. This disables HA; if the node or PVC is lost, the
 # OpenSearch data/cluster state is lost. Do not set discovery.type=single-node
 # with this operator because it also injects cluster.initial_master_nodes.
+# For single-node mode, override that bootstrap target to this StatefulSet pod.
 
 certManager:
   enabled: true
@@ -125,6 +126,11 @@ opensearch:
     setVMMaxMapCount: true
   nodes:
     diskSize: "10Gi"
+    env:
+      - name: cluster.initial_master_nodes
+        value: azul-opensearch-nodes-0
+      - name: discovery.seed_hosts
+        value: azul-opensearch-nodes-0
     resources:
       requests:
         memory: "1Gi"
