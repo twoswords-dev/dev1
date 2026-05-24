@@ -131,6 +131,21 @@ opensearch:
         value: azul-opensearch-nodes-0
       - name: discovery.seed_hosts
         value: azul-opensearch-nodes-0
+    # The operator's default readiness/startup probe uses --fail against HTTPS.
+    # Before securityadmin initializes .opendistro_security, OpenSearch returns
+    # an HTTP error body even though port 9200 is usable. Mark the endpoint ready
+    # once it is reachable so the securityconfig job can connect via the service.
+    probes:
+      startup:
+        command:
+          - /bin/bash
+          - -c
+          - curl -k --silent https://localhost:9200 >/dev/null
+      readiness:
+        command:
+          - /bin/bash
+          - -c
+          - curl -k --silent https://localhost:9200 >/dev/null
     resources:
       requests:
         memory: "1Gi"
