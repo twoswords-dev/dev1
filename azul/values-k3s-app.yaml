@@ -14,6 +14,13 @@ monitoring:
 
 images:
   pullPolicy: IfNotPresent
+  # The upstream unstable digest-pinned images in values.yaml are not present on Docker Hub.
+  # Pin the core-only deployment to published 10.0.0 tags.
+  custom:
+    dispatcher: dispatcher:10.0.0
+    restapi-server: restapi-server:10.0.0
+    webui: webui:10.0.0
+    docs: docs:10.0.0
 
 external:
   opensearch:
