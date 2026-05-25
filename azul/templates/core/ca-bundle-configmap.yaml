@@ -1,0 +1,13 @@
+{{- if .Values.CACertificateConfigMap }}
+{{- $bundle := .Files.Get "ca-certificates" }}
+{{- if $bundle }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.CACertificateConfigMap }}
+data:
+  ca.crt: |-
+{{ $bundle | indent 4 }}
+{{- end }}
+{{- end }}

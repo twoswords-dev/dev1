@@ -1,0 +1,250 @@
+# k3s homelab values for the Azul application chart.
+# Target namespace: azul-app
+# Deploy this file with Argo CD as: path=azul, values=values-k3s-app.yaml
+
+namespace:
+  create: true
+  secure: false
+
+storageClassName: longhorn
+CACertificateConfigMap: azul-ca-bundle
+networkPolicy: false
+monitoring:
+  enabled: false
+
+images:
+  pullPolicy: IfNotPresent
+
+external:
+  opensearch:
+    endpoint: "https://azul-opensearch.azul-infra.svc.cluster.local:9200"
+    username: "admin"
+    partition: "homelab01"
+    versionSuffix: "0"
+  filestore:
+    backend: "s3"
+    endpoint: "s3-store-minio.azul-infra.svc.cluster.local:9000"
+    location: "azul"
+    secure: false
+    region: ""
+    xorEncoding: false
+  kafka:
+    endpoint: "azul-kafka-kafka-bootstrap.azul-infra.svc.cluster.local:9092"
+    topicPrefix: "homelab01"
+    topicDefaultReplicas: 1
+    topicDefaultPartitions: 1
+  redis:
+    endpoint: "azul-redis-master:6379"
+    db: 15
+  services: {}
+
+# Start small: deploy Azul core only. Enable plugin groups later as capacity allows.
+pluginsEnabled: false
+apiServices:
+  smartStringFilter:
+    enabled: false
+stats:
+  enabled: false
+burrow:
+  enabled: false
+scaler:
+  enabled: false
+auditForwarder:
+  enabled: false
+recovery:
+  mode: "off"
+
+redis:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  pvcSize: 1Gi
+
+web:
+  ingress:
+    enabled: true
+    hosts:
+      - azul.local
+    ingressClassName: nginx
+    secretName: "azul-web-tls"
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: 4096m
+  replicas: 1
+
+security:
+  oidc:
+    # Keycloak is installed in azul-infra, but the realm/client still need to be configured.
+    # Keep OIDC disabled for the first core rollout; the CA bundle already trusts Keycloak TLS.
+    enabled: false
+    authority_url: "https://keycloak.azul-infra.svc.cluster.local/realms/azul"
+    client_id: "azul"
+    scopes: "openid profile email"
+
+sources:
+  testing:
+    partition_unit: all
+    expire_events_after: 7 days
+    description: Files submitted during homelab testing of Azul
+    exclude_from_backup: true
+    elastic:
+      number_of_replicas: 0
+      number_of_shards: 1
+    icon_class: trash-alt
+    references:
+      - description: Local submitter or point of contact for samples
+        name: user
+        required: false
+        highlight: true
+    kafka:
+      config:
+        segment.bytes: "1073741824"
+
+limitRange:
+  enabled: true
+  spec:
+    limits:
+      - defaultRequest:
+          cpu: 25m
+          memory: 96Mi
+        default:
+          cpu: 300m
+          memory: 512Mi
+        type: Container
+
+docs:
+  resources:
+    requests:
+      memory: 64Mi
+      cpu: 25m
+    limits:
+      memory: 128Mi
+      cpu: 100m
+
+restapi:
+  minReplicas: 1
+  maxReplicas: 1
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 768Mi
+      cpu: 500m
+  logPvcSize: 1Gi
+  purgePvcSize: 1Gi
+  config:
+    processWorkers: 1
+    asyncioWorkers: 1
+    logLevel: INFO
+
+dispatcher:
+  config:
+    defaultLogLevel: INFO
+    metastore:
+      events:
+        replicas: 1
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 50m
+          limits:
+            memory: 512Mi
+            cpu: 300m
+      streams:
+        replicas: 1
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 50m
+          limits:
+            memory: 512Mi
+            cpu: 300m
+        env:
+          DP.STREAMS.CACHE.SIZE_BYTES: "32Mi"
+          DP.STREAMS.CACHE.SHARDS: 8
+          DP.STREAMS.API_ALLOW_DELETE: "true"
+    plugin:
+      events:
+        replicas: 1
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 50m
+          limits:
+            memory: 512Mi
+            cpu: 300m
+        env:
+          DP.EVENTS.DEDUPE_CACHE_BYTES: "10Mi"
+          DP.EVENTS.REPLAY_PLUGIN_CACHE.SIZE_BYTES: "10Mi"
+          DP.EVENTS.REPLAY_PLUGIN_CACHE.MIN_RUNTIME_SECONDS: "10"
+      streams:
+        replicas: 1
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 50m
+          limits:
+            memory: 512Mi
+            cpu: 300m
+        env:
+          DP.STREAMS.CACHE.SIZE_BYTES: "32Mi"
+          DP.STREAMS.CACHE.SHARDS: 8
+          DP.STREAMS.API_ALLOW_DELETE: "false"
+
+lostTasks:
+  replicas: 1
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 50m
+    limits:
+      memory: 256Mi
+      cpu: 100m
+
+metastore:
+  instances:
+    ageoff:
+      minReplicas: 1
+      maxReplicas: 1
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 100m
+        limits:
+          memory: 512Mi
+          cpu: 500m
+    ingest-binary:
+      minReplicas: 1
+      maxReplicas: 1
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 100m
+        limits:
+          memory: 512Mi
+          cpu: 500m
+    ingest-plugin:
+      minReplicas: 1
+      maxReplicas: 1
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 100m
+        limits:
+          memory: 512Mi
+          cpu: 500m
+    ingest-status:
+      minReplicas: 1
+      maxReplicas: 1
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 100m
+        limits:
+          memory: 512Mi
+          cpu: 500m
