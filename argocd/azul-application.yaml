@@ -13,7 +13,7 @@ spec:
     path: azul
     helm:
       valueFiles:
-        - values-k3s-app.yaml
+        - values-k3s-qa.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: azul-app

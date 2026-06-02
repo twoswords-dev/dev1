@@ -1,0 +1,322 @@
+storageClassName: longhorn
+networkPolicy: false
+limitRange:
+  enabled: true
+  spec:
+    limits:
+    - defaultRequest:
+        cpu: 50m
+        memory: 128Mi
+      default:
+        cpu: 500m
+        memory: 1Gi
+      type: Container
+coreHPA:
+  minReplicas: 1
+  maxReplicas: 1
+  averageUtilization: 100
+pluginHPA:
+  minReplicas: 1
+  maxReplicas: 1
+  averageUtilization: 100
+pluginSyncHPA:
+  minReplicas: 1
+  maxReplicas: 1
+  averageUtilization: 100
+external:
+  opensearch:
+    endpoint: https://azul-opensearch.azul-infra.svc.cluster.local:9200
+    username: azul_writer
+    partition: qa01
+    versionSuffix: '0'
+  filestore:
+    backend: s3
+    endpoint: s3-store-minio.azul-infra.svc.cluster.local:9000
+    location: azul
+    secure: false
+    region: us-east-1
+  kafka:
+    endpoint: azul-kafka-kafka-bootstrap.azul-infra.svc.cluster.local:9092
+    topicPrefix: qa01
+    topicDefaultReplicas: 1
+    topicDefaultPartitions: 1
+  redis:
+    endpoint: azul-redis-master:6379
+    db: 15
+redis:
+  enabled: true
+  pvcSize: 1Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+monitoring:
+  enabled: false
+auditForwarder:
+  enabled: false
+apiServices:
+  smartStringFilter:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 250m
+        memory: 768Mi
+web:
+  replicas: 1
+  pdb:
+    enabled: false
+  ingress:
+    enabled: true
+    hosts:
+    - azul.local
+    ingressClassName: nginx
+    secretName: azul-web-tls
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: 4096m
+docs:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+burrow:
+  enabled: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+recovery:
+  backup:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 250m
+        memory: 512Mi
+  restore:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 250m
+        memory: 512Mi
+dispatcher:
+  config:
+    metastore:
+      events:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            cpu: 250m
+            memory: 512Mi
+      streams:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            cpu: 250m
+            memory: 512Mi
+    plugin:
+      events:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            cpu: 250m
+            memory: 512Mi
+      streams:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            cpu: 250m
+            memory: 512Mi
+lostTasks:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
+metastore:
+  status_index:
+    number_of_shards: 1
+    number_of_replicas: 0
+  plugin_index:
+    number_of_shards: 1
+    number_of_replicas: 0
+  instances:
+    ageoff:
+      maxReplicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 250m
+          memory: 512Mi
+    ingest-binary:
+      maxReplicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 250m
+          memory: 512Mi
+    ingest-plugin:
+      maxReplicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 250m
+          memory: 512Mi
+    ingest-status:
+      maxReplicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 250m
+          memory: 512Mi
+restapi:
+  maxReplicas: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 768Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  config:
+    processWorkers: 1
+    asyncioWorkers: 1
+sources:
+  testing:
+    partition_unit: all
+    expire_events_after: 7 days
+    description: Files submitted during QA testing of Azul
+    exclude_from_backup: true
+    elastic:
+      number_of_replicas: 0
+      number_of_shards: 1
+    icon_class: trash-alt
+    references:
+    - description: Local submitter or point of contact for samples
+      name: user
+      required: true
+      highlight: true
+    kafka:
+      numpartitions: 1
+      replicationfactor: 1
+      config:
+        segment.bytes: '1073741824'
+pluginsEnabled: false
+plugins:
+  dynamic:
+    enabled: false
+  maco:
+    enabled: false
+  nsrl:
+    enabled: false
+    pvc:
+      size: 1Gi
+    server:
+      enabled: false
+  office:
+    enabled: false
+  retrohunt:
+    enabled: false
+CACertificateConfigMap: azul-ca-bundle
+namespace:
+  secure: false
+  create: true
+images:
+  pullPolicy: IfNotPresent
+  custom:
+    audit-forwarder: audit-forwarder:10.0.0
+    backup: backup:10.0.0
+    client: client:10.0.0
+    dispatcher: dispatcher:10.0.0
+    docs: docs:10.0.0
+    restapi-server: restapi-server:10.0.0
+    webui: webui:10.0.0
+    plugin-alphabets: plugin-alphabets:10.0.0
+    plugin-android-parser: plugin-android-parser:10.0.0
+    plugin-assemblyline: plugin-assemblyline:10.0.0
+    plugin-build-time-strings: plugin-build-time-strings:10.0.0
+    plugin-mandiant-capa: plugin-mandiant-capa:10.0.0
+    plugin-cape: plugin-cape:10.0.0
+    plugin-de4dot: plugin-de4dot:10.0.0
+    plugin-dotnet-decompiler: plugin-dotnet-decompiler:10.0.0
+    plugin-dotnet-deob: plugin-dotnet-deob:10.0.0
+    plugin-email: plugin-email:10.0.0
+    plugin-entropy: plugin-entropy:10.0.0
+    plugin-entrypointcheck: plugin-entrypointcheck:10.0.0
+    plugin-exiftool: plugin-exiftool:10.0.0
+    plugin-export-hashes: plugin-export-hashes:10.0.0
+    plugin-maco: plugin-maco:10.0.0
+    plugin-floss: plugin-floss:10.0.0
+    plugin-goinfo: plugin-goinfo:10.0.0
+    plugin-image-convert: plugin-image-convert:10.0.0
+    plugin-index-coincidence: plugin-index-coincidence:10.0.0
+    plugin-js-deobf: plugin-js-deobf:10.0.0
+    plugin-lief: plugin-lief:10.0.0
+    plugin-lookback: plugin-lookback:10.0.0
+    plugin-malcarve: plugin-malcarve:10.0.0
+    plugin-netinfo: plugin-netinfo:10.0.0
+    plugin-nsrl: plugin-nsrl:10.0.0
+    plugin-office: plugin-office:10.0.0
+    plugin-pdftools: plugin-pdftools:10.0.0
+    plugin-python: plugin-python:10.0.0
+    plugin-repeated-bytes: plugin-repeated-bytes:10.0.0
+    plugin-retrohunt: plugin-retrohunt:10.0.0
+    plugin-richid: plugin-richid:10.0.0
+    plugin-script-decoder: plugin-script-decoder:10.0.0
+    plugin-shortcut: plugin-shortcut:10.0.0
+    plugin-tika: plugin-tika:10.0.0
+    plugin-unbox: plugin-unbox:10.0.0
+    plugin-virustotal: plugin-virustotal:10.0.0
+    stats: stats:10.0.0
+    nsrl-lookup-server: nsrl-lookup-server:10.0.0
+    plugin-suricata: plugin-suricata:10.0.0
+    scaler: scaler:10.0.0
+    plugin-debloat: plugin-debloat:10.0.0
+    plugin-yara: plugin-yara:10.0.0
+    plugin-portex: plugin-portex:10.0.0
+    plugin-truncated: plugin-truncated:10.0.0
+    plugin-certificates: plugin-certificates:10.0.0
+    plugin-qrcode: plugin-qrcode:10.0.0
+    smart-string-filter: smart-string-filter:10.0.0
+    plugin-ghidra: plugin-ghidra:10.0.0
+    plugin-report-feeds: plugin-report-feeds:10.0.0
+    plugin-jadx: plugin-jadx:10.0.0
+security:
+  oidc:
+    enabled: true
+    authority_url: https://keycloak.azul-infra.svc.cluster.local/realms/azul
+    client_id: azul-web
+    scopes: openid profile offline_access roles azul

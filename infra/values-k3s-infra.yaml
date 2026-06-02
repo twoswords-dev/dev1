@@ -1,14 +1,3 @@
-# k3s homelab values for the Azul infrastructure chart.
-# Target namespace: azul-infra
-# Deploy this file with Argo CD as: path=infra, values=values-k3s-infra.yaml
-# Sized conservatively for a 3-node k3s cluster with about 12 CPU cores,
-# 12Gi RAM, and ~200Gi total disk. Stateful services run as single replicas first.
-# OpenSearch is configured as a single-node development/testing cluster via the
-# operator replica count. This disables HA; if the node or PVC is lost, the
-# OpenSearch data/cluster state is lost. Do not set discovery.type=single-node
-# with this operator because it also injects cluster.initial_master_nodes.
-# For single-node mode, override that bootstrap target to this StatefulSet pod.
-
 certManager:
   enabled: true
   selfSigned: true
@@ -16,17 +5,15 @@ certManager:
   caCertificateName: azul-infra-ca
   caSecretName: azul-infra-ca
   issuerName: azul-infra-ca
-
 operators:
   strimzi:
     enabled: true
   opensearch:
     enabled: true
-
 strimzi-operator:
   replicas: 1
   watchNamespaces:
-    - azul-infra
+  - azul-infra
   watchAnyNamespace: false
   labelsExclusionPattern: argocd.argoproj.io/instance
   generateNetworkPolicy: false
@@ -37,7 +24,6 @@ strimzi-operator:
     limits:
       memory: 384Mi
       cpu: 500m
-
 opensearch-operator:
   installCRDs: true
   manager:
@@ -52,10 +38,8 @@ opensearch-operator:
   webhook:
     certManager:
       enabled: true
-
 networkPolicy:
   enabled: false
-
 minio:
   main:
     enable: true
@@ -65,11 +49,11 @@ minio:
       storage: 5Gi
     resources:
       requests:
-        memory: "256Mi"
-        cpu: "100m"
+        memory: 256Mi
+        cpu: 100m
       limits:
-        memory: "512Mi"
-        cpu: "500m"
+        memory: 512Mi
+        cpu: 500m
     ingress:
       api:
         enable: true
@@ -81,11 +65,8 @@ minio:
       secretName: minio-tls
       annotations:
         cert-manager.io/issuer: azul-infra-ca
-        nginx.ingress.kubernetes.io/ssl-redirect: "true"
-
+        nginx.ingress.kubernetes.io/ssl-redirect: 'true'
   backup:
-    # Disabled initially to avoid consuming scarce RAM/disk. Backups should ideally
-    # use storage outside this small k3s cluster.
     enable: false
     replicas: 1
     storageClass: longhorn
@@ -93,11 +74,11 @@ minio:
       storage: 5Gi
     resources:
       requests:
-        memory: "256Mi"
-        cpu: "100m"
+        memory: 256Mi
+        cpu: 100m
       limits:
-        memory: "512Mi"
-        cpu: "500m"
+        memory: 512Mi
+        cpu: 500m
     ingress:
       api:
         enable: true
@@ -109,8 +90,7 @@ minio:
       secretName: minio-backup-tls
       annotations:
         cert-manager.io/issuer: azul-infra-ca
-        nginx.ingress.kubernetes.io/ssl-redirect: "true"
-
+        nginx.ingress.kubernetes.io/ssl-redirect: 'true'
 opensearch:
   enable: true
   name: azul-opensearch
@@ -125,34 +105,30 @@ opensearch:
     replicas: 1
     setVMMaxMapCount: true
   nodes:
-    diskSize: "10Gi"
+    diskSize: 10Gi
     env:
-      - name: cluster.initial_master_nodes
-        value: azul-opensearch-nodes-0
-      - name: discovery.seed_hosts
-        value: azul-opensearch-nodes-0
-    # The operator's default readiness/startup probe uses --fail against HTTPS.
-    # Before securityadmin initializes .opendistro_security, OpenSearch returns
-    # an HTTP error body even though port 9200 is usable. Mark the endpoint ready
-    # once it is reachable so the securityconfig job can connect via the service.
+    - name: cluster.initial_master_nodes
+      value: azul-opensearch-nodes-0
+    - name: discovery.seed_hosts
+      value: azul-opensearch-nodes-0
     probes:
       startup:
         command:
-          - /bin/bash
-          - -c
-          - curl -k --silent https://localhost:9200 >/dev/null
+        - /bin/bash
+        - -c
+        - curl -k --silent https://localhost:9200 >/dev/null
       readiness:
         command:
-          - /bin/bash
-          - -c
-          - curl -k --silent https://localhost:9200 >/dev/null
+        - /bin/bash
+        - -c
+        - curl -k --silent https://localhost:9200 >/dev/null
     resources:
       requests:
-        memory: "1Gi"
-        cpu: "500m"
+        memory: 1Gi
+        cpu: 500m
       limits:
-        memory: "1536Mi"
-        cpu: "1000m"
+        memory: 1536Mi
+        cpu: 1000m
   ingress:
     enable: false
   dashboard:
@@ -164,8 +140,131 @@ opensearch:
       secretName: dashboard-ingress-tls
       annotations:
         cert-manager.io/issuer: azul-infra-ca
-        nginx.ingress.kubernetes.io/ssl-redirect: "true"
-
+        nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    additionalConfig:
+      server.name: azul-opensearch-dashboards
+      server.host: 0.0.0.0
+      server.rewriteBasePath: 'false'
+      opensearch.ssl.verificationMode: certificate
+      opensearch.ssl.certificateAuthorities: /usr/share/opensearch-dashboards/certs/root-ca.pem
+      opensearch.requestHeadersWhitelist: '["Authorization", "security_tenant", "securitytenant"]'
+      opensearch_security.multitenancy.enabled: 'true'
+      opensearch_security.multitenancy.tenants.preferred: '["Private", "Global"]'
+      opensearch_security.readonly_mode.roles: '["kibana_read_only"]'
+      opensearch_security.cookie.secure: 'true'
+      opensearch_security.auth.type: openid
+      opensearch_security.openid.scope: openid profile email offline_access
+      opensearch_security.openid.connect_url: https://keycloak.local/realms/azul/.well-known/openid-configuration
+      opensearch_security.openid.client_id: opensearch-dashboards
+      opensearch_security.openid.client_secret: ${OPENSEARCH_DASHBOARDS_CLIENT_SECRET}
+      opensearch_security.openid.base_redirect_url: https://opensearch-dashboards.local
+    env:
+    - name: OPENSEARCH_DASHBOARDS_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: opensearch-dashboards-oidc
+          key: client-secret
+  securityConfig:
+    _meta:
+      type: config
+      config_version: 2
+    config:
+      dynamic:
+        filtered_alias_mode: warn
+        do_not_fail_on_forbidden: false
+        kibana:
+          multitenancy_enabled: true
+          private_tenant_enabled: false
+          default_tenant: ''
+          server_username: kibanaserver
+          index: .kibana
+          sign_in_options:
+          - BASIC
+          - OPENID
+        http:
+          anonymous_auth_enabled: false
+        authc:
+          basic_internal_auth_domain:
+            description: Authenticate via HTTP Basic against internal users database
+            http_enabled: true
+            transport_enabled: true
+            order: 0
+            http_authenticator:
+              type: basic
+              challenge: false
+            authentication_backend:
+              type: intern
+          openid_auth_domain:
+            http_enabled: true
+            transport_enabled: true
+            order: 1
+            http_authenticator:
+              type: openid
+              challenge: false
+              config:
+                subject_key: preferred_username
+                roles_key: roles
+                openid_connect_url: https://keycloak.local/realms/azul/.well-known/openid-configuration
+                openid_connect_idp.enable_ssl: true
+                openid_connect_idp.verify_hostnames: true
+                openid_connect_idp.pemtrustedcas_filepath: /usr/share/opensearch/config/certs/ca-certificates
+            authentication_backend:
+              type: noop
+        authz: {}
+        auth_failure_listeners: {}
+        multi_rolespan_enabled: true
+  roleMapping:
+    azul-fill1:
+      backend_roles:
+      - azul_read
+      - azul-access
+    azul-fill2:
+      backend_roles:
+      - azul_read
+      - azul-access
+    azul-fill3:
+      backend_roles:
+      - azul_read
+      - azul-access
+    azul-fill4:
+      backend_roles:
+      - azul_read
+      - azul-access
+    azul-fill5:
+      backend_roles:
+      - azul_read
+      - azul-access
+    s-any:
+      backend_roles:
+      - azul_read
+      - azul-access
+    s-official:
+      backend_roles:
+      - azul_read
+      - azul-access
+    s-tlp-clear:
+      backend_roles:
+      - azul_read
+      - azul-access
+    s-tlp-green:
+      backend_roles:
+      - azul_read
+      - azul-access
+    s-tlp-amber:
+      backend_roles:
+      - azul_read
+      - azul-access
+    s-tlp-amber-strict:
+      backend_roles:
+      - azul_read
+      - azul-access
+    azul_write:
+      backend_roles:
+      - azul_write
+    all_access:
+      backend_roles:
+      - admin
+      - opensearch-admins
 kafka:
   enable: true
   name: azul-kafka
@@ -205,18 +304,17 @@ kafka:
     class: longhorn
   kafkactl:
     enable: false
-
 keycloak:
   enable: true
   image: quay.io/keycloak/keycloak:26.1
   replicas: 1
   resources:
     requests:
-      memory: "512Mi"
-      cpu: "100m"
+      memory: 512Mi
+      cpu: 100m
     limits:
-      memory: "1Gi"
-      cpu: "500m"
+      memory: 1Gi
+      cpu: 500m
   proxyHeaderArg: xforwarded
   tls:
     enabled: true
@@ -229,21 +327,18 @@ keycloak:
     secretName: keycloak-tls
     annotations:
       cert-manager.io/issuer: azul-infra-ca
-      nginx.ingress.kubernetes.io/ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
   postgres:
     storageClassName: longhorn
     size: 2Gi
     resources:
       requests:
-        memory: "256Mi"
-        cpu: "100m"
+        memory: 256Mi
+        cpu: 100m
       limits:
-        memory: "512Mi"
-        cpu: "500m"
-
-# Keep the first infra rollout focused on runtime dependencies.
-# Monitoring/logging can be enabled after OpenSearch/Kafka/MinIO/Keycloak are healthy.
+        memory: 512Mi
+        cpu: 500m
 kube-prometheus-stack:
   enable: false
 loki:
