@@ -261,6 +261,15 @@ web:
     hosts:
     - azul.local
     ingressClassName: nginx
+    # Company SAN cert option:
+    # 1. Ensure the company cert SAN includes this hostname.
+    # 2. Create this TLS secret in azul-app with the company full-chain cert/key:
+    #      kubectl -n azul-app create secret tls azul-external-web-tls \
+    #        --cert=company-fullchain.crt --key=company.key \
+    #        --dry-run=client -o yaml | kubectl apply -f -
+    # 3. You may use the same physical cert/key as Keycloak, but the secret must
+    #    exist separately in each namespace because Kubernetes secrets are
+    #    namespace-scoped.
     secretName: azul-external-web-tls
     security:
       enableHarden: true
