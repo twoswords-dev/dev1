@@ -140,7 +140,7 @@ security:
     # Keycloak is installed in azul-infra, but the realm/client still need to be configured.
     # Keep OIDC disabled for the first core rollout; the CA bundle already trusts Keycloak TLS.
     enabled: false
-    authority_url: "https://keycloak.azul-infra.svc.cluster.local/realms/azul"
+    authority_url: "https://keycloak.local/realms/azul"
     client_id: "azul-web"
     scopes: "openid profile offline_access roles azul"
 
