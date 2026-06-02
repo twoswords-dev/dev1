@@ -560,8 +560,8 @@ sources:
     description: Files submitted during testing of Azul
     exclude_from_backup: true
     elastic:
-      number_of_replicas: 2
-      number_of_shards: 3
+      number_of_replicas: 0
+      number_of_shards: 1
     icon_class: trash-alt
     references:
     - description: Local submitter or point of contact for samples
@@ -575,7 +575,7 @@ pluginConfig:
   RUNNER_LOG_LEVEL: info
   ENABLE_MEM_LIMITS: 'true'
   PLUGIN_DEPTH_LIMIT: '10'
-pluginsEnabled: true
+pluginsEnabled: false
 plugins:
   assemblyline:
     type: standard
@@ -653,7 +653,7 @@ plugins:
               key: al_token
   dynamic:
     type: standard
-    enabled: true
+    enabled: false
     plugins:
       cape:
         enabled: false
@@ -679,7 +679,7 @@ plugins:
   maco:
     type: maco
     image: plugin-maco
-    enabled: true
+    enabled: false
     resources:
       requests:
         memory: 2Gi
@@ -693,7 +693,7 @@ plugins:
     sources: {}
   nsrl:
     type: standard
-    enabled: true
+    enabled: false
     pvc:
       size: 20Gi
     server:
@@ -736,7 +736,7 @@ plugins:
         - 'false'
   office:
     type: standard
-    enabled: true
+    enabled: false
     plugins:
       office-dde:
         image: plugin-office
@@ -782,7 +782,7 @@ plugins:
     demoConfig: false
   retrohunt:
     type: standard
-    enabled: true
+    enabled: false
     schedule: 0 2 * * *
     pvc:
       size: 20Gi
@@ -956,7 +956,7 @@ plugins:
               mountPath: /indices
   tika:
     type: standard
-    enabled: true
+    enabled: false
     plugins:
       tika:
         extraContainers:
@@ -1061,7 +1061,7 @@ plugins:
   yara-x:
     type: yara-x
     image: plugin-yara
-    enabled: true
+    enabled: false
     resources:
       requests:
         memory: 512Mi
@@ -1073,7 +1073,7 @@ plugins:
   suricata:
     type: suricata
     image: plugin-suricata
-    enabled: true
+    enabled: false
     resources:
       requests:
         memory: 1Gi
@@ -1084,7 +1084,7 @@ plugins:
     sources: {}
   generic:
     type: standard
-    enabled: true
+    enabled: false
     plugins:
       alphabets:
         tmp: 1Gi
