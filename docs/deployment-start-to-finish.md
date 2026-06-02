@@ -106,16 +106,31 @@ minio:
         host: minio.local
 ```
 
-## 3. Create required Kubernetes secrets
+## 3. Apply required Kubernetes credentials
 
-Create infra secrets first:
+The current deployment credentials are committed as Kubernetes Secret manifests so a rebuild can recreate the same cluster credentials before Argo syncs the charts:
 
 ```bash
 cd /data/azul-app
-infra/scripts/create-k3s-infra-secrets.sh
+kubectl apply -f infra/creds.yaml
+kubectl apply -f azul/creds.yaml
 ```
 
-For production/airgap, set explicit secret values instead of accepting defaults/generated values, for example:
+These files contain live base64-encoded secrets for this environment:
+
+```text
+infra/creds.yaml
+azul/creds.yaml
+```
+
+The older helper scripts remain available if you intentionally want to generate or rotate credentials instead of reusing the committed manifests:
+
+```bash
+infra/scripts/create-k3s-infra-secrets.sh
+azul/scripts/create-k3s-app-secrets.sh
+```
+
+If you use the helper scripts for production/airgap, set explicit secret values instead of accepting defaults/generated values, for example:
 
 ```bash
 export S3_ACCESS_KEY='...'
@@ -124,22 +139,11 @@ export KEYCLOAK_ADMIN_PASSWORD='...'
 export KEYCLOAK_DB_PASSWORD='...'
 export OPENSEARCH_ADMIN_PASSWORD='...'
 export OPENSEARCH_DASHBOARD_PASSWORD='...'
-infra/scripts/create-k3s-infra-secrets.sh
-```
-
-Then create Azul app secrets:
-
-```bash
-azul/scripts/create-k3s-app-secrets.sh
-```
-
-For production/airgap, set explicit app secret values:
-
-```bash
 export REDIS_PASSWORD='...'
 export OPENSEARCH_AZUL_WRITER_PASSWORD='...'
 export OPENSEARCH_AZUL_SECURITY_PASSWORD='...'
 export JWT_SIGNING_SECRET='...'
+infra/scripts/create-k3s-infra-secrets.sh
 azul/scripts/create-k3s-app-secrets.sh
 ```
 
@@ -260,16 +264,31 @@ https://opensearch-dashboards.local/
 https://minio.local/
 ```
 
-## 9. Deployment order summary
+## 9. Non-Argo/manual build steps
+
+Argo owns the Helm-rendered infra/app resources. The rebuild process still has these intentional non-Argo steps:
+
+1. Apply committed credential manifests:
+   ```bash
+   kubectl apply -f infra/creds.yaml
+   kubectl apply -f azul/creds.yaml
+   ```
+2. Optionally rotate or replace the Azul external web TLS secret with `scripts/create-azul-external-web-tls.sh`.
+3. Configure Keycloak realm/clients/users with `infra/scripts/configure-keycloak-azul.sh` after Keycloak is available.
+4. Configure OpenSearch security mappings with `infra/scripts/configure-opensearch-security-azul.sh` after OpenSearch is available.
+
+Controller/operator-created runtime objects, such as Pods, ReplicaSets, PVCs, cert-manager-issued TLS Secrets/Certificates, Strimzi Kafka Secrets, and OpenSearch operator resources, are expected to appear outside the Argo application resource list but are not manual build steps.
+
+## 10. Deployment order summary
 
 ```bash
 cd /data/azul-app
 
-# 1. Create secrets
-infra/scripts/create-k3s-infra-secrets.sh
-azul/scripts/create-k3s-app-secrets.sh
+# 1. Apply committed credentials
+kubectl apply -f infra/creds.yaml
+kubectl apply -f azul/creds.yaml
 
-# 2. Create Azul web TLS secret, company-cert example
+# 2. Optional: rotate/recreate Azul web TLS secret instead of reusing azul/creds.yaml
 AZUL_HOSTNAME=azul.your-company.example \
 TLS_CERT_FILE=/path/to/company-fullchain.crt \
 TLS_KEY_FILE=/path/to/company.key \
@@ -293,10 +312,10 @@ kubectl -n azul-app get pods -w
 infra/scripts/configure-opensearch-security-azul.sh
 ```
 
-## 10. Notes for airgapped/company deployment
+## 11. Notes for airgapped/company deployment
 
 - Keep only `infra/values.yaml` and `azul/values.yaml` wired into Argo.
-- Do not commit private keys, generated passwords, or company certificates unless your internal policy explicitly allows it.
+- This repo now includes `infra/creds.yaml` and `azul/creds.yaml` for this internal deployment. They contain live base64-encoded secrets; do not mirror them to public repos or external environments unless policy explicitly allows it.
 - Prefer company DNS over hosts-file entries.
 - Prefer company PKI certificates over local self-signed CA bundles.
 - Ensure the Azul web certificate is stored as `azul-app/azul-external-web-tls`, because the Azul ingress references that exact secret name.

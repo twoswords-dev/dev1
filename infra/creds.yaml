@@ -1,0 +1,56 @@
+# Current deployment credentials. Apply with: kubectl apply -f infra/creds.yaml
+# WARNING: contains live base64-encoded secrets for this environment.
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: s3-keys
+  namespace: azul-infra
+type: Opaque
+data:
+  accesskey: YXp1bG1pbmlv
+  secretkey: aUE0Tk00SllzZlNCbkxSSDFiZ2htYTRabGhWZEwxbjZOWnFjMENmbkRWNkhWWjMz
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: s3-backup-keys
+  namespace: azul-infra
+type: Opaque
+data:
+  accesskey: YXp1bGJhY2t1cA==
+  secretkey: Z3JzL0VNVUhwZ3c3eWxiSnR1M0NabDlPSFhaL0xFdm90YlZYaG5QSDBrd1BSU21U
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keycloak
+  namespace: azul-infra
+type: Opaque
+data:
+  DB_PASSWORD: UVY3RFVndlZaZGFQek10MTV1RnJrblV5NldObFE5SVp2bDhaWXJEaVM0MEdKMVB4
+  KEYCLOAK_ADMIN_PASSWORD: anc1c2NFTWJNeHRBempSZ08yVldMYUZQcHZDSjFkNWVXKzFuMCtZZHZuL1h2aXFL
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: azul-cluster-admincredentials
+  namespace: azul-infra
+type: Opaque
+data:
+  password: YWRtaW5wYXNzd29yZA==
+  username: YWRtaW4=
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: azul-cluster-dashboardcredentials
+  namespace: azul-infra
+type: Opaque
+data:
+  password: a2liYW5hc2VydmVycGFzc3dvcmQ=
+  username: a2liYW5hc2VydmVy

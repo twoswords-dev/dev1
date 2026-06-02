@@ -40,21 +40,36 @@ The infra chart now includes the Strimzi and OpenSearch Operator Helm charts as 
 
 If Argo CD reports a dry-run error for newly-created CRDs on first sync, retry the sync after the CRDs are established, or set `SkipDryRunOnMissingResource=true` on the Argo CD application.
 
-## One-time secrets
+## One-time credentials
 
-Do not commit live secrets. Create them in the cluster before syncing with Argo CD:
+For this internal deployment, the current infra credentials are committed as Kubernetes Secret manifests. Apply them before syncing with Argo CD:
 
 ```bash
-cd infra
-./scripts/create-k3s-infra-secrets.sh
+cd /data/azul-app
+kubectl apply -f infra/creds.yaml
 ```
 
-To supply your own passwords, set env vars before running the script, for example:
+The matching Azul app credentials are in:
+
+```bash
+kubectl apply -f azul/creds.yaml
+```
+
+These files contain live base64-encoded secrets for this environment. Do not mirror them to public repos or external environments unless policy explicitly allows it.
+
+The helper scripts remain available if you intentionally want to generate or rotate credentials instead of reusing the committed manifests:
+
+```bash
+infra/scripts/create-k3s-infra-secrets.sh
+azul/scripts/create-k3s-app-secrets.sh
+```
+
+To supply your own passwords, set env vars before running the scripts, for example:
 
 ```bash
 export KEYCLOAK_ADMIN_PASSWORD='change-me'
 export OPENSEARCH_ADMIN_PASSWORD='adminpassword'
-./scripts/create-k3s-infra-secrets.sh
+infra/scripts/create-k3s-infra-secrets.sh
 ```
 
 ## Argo CD UI settings
