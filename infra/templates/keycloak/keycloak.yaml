@@ -75,8 +75,11 @@ spec:
         image: {{ .Values.keycloak.image }}
         args:
           - start
-          - --hostname={{ .Values.keycloak.ingress.hostname }}
+          - --hostname={{ .Values.keycloak.hostnameArg | default .Values.keycloak.ingress.hostname }}
           - --proxy-headers={{ .Values.keycloak.proxyHeaderArg }}
+{{- range .Values.keycloak.extraArgs }}
+          - {{ . | quote }}
+{{- end }}
 {{- if .Values.keycloak.tls.enabled }}
           - --http-enabled=false
           - --https-certificate-file=/etc/x509/https/tls.crt

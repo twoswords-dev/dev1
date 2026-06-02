@@ -245,6 +245,7 @@ opensearch:
       annotations: {}
 
     env: []
+    additionalVolumes: []
 
     additionalConfig:
       opensearch_security.multitenancy.enabled: "true"
@@ -820,6 +821,11 @@ keycloak:
       cpu: "500m"
   # Normally forwarded or xforwarded
   proxyHeaderArg: xforwarded
+  # Optional value for Keycloak's --hostname arg. Defaults to ingress.hostname.
+  # Use a full URL when hostname-backchannel-dynamic is enabled.
+  hostnameArg: ""
+  # Extra Keycloak startup args. Useful for OIDC behind ingress/internal service split.
+  extraArgs: []
   tls:
     # Enables HTTPS on the Keycloak pod/service using a cert-manager Certificate.
     enabled: false

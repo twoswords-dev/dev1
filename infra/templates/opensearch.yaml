@@ -259,6 +259,10 @@ spec:
     tls:
       enable: false
       generate: false
+{{- if gt (len .Values.opensearch.dashboard.additionalVolumes) 0 }}
+    additionalVolumes:
+{{ .Values.opensearch.dashboard.additionalVolumes | toYaml | nindent 6 }}
+{{- end }}
 {{- if gt (len .Values.opensearch.dashboard.env) 0 }}
     env:
 {{ .Values.opensearch.dashboard.env | toYaml | nindent 6 }}
