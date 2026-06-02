@@ -137,9 +137,14 @@ web:
 
 security:
   oidc:
-    # Keycloak is installed in azul-infra, but the realm/client still need to be configured.
-    # Keep OIDC disabled for the first core rollout; the CA bundle already trusts Keycloak TLS.
-    enabled: false
+    # Keycloak realm/client must match the docs:
+    # - realm: azul
+    # - public client: azul-web
+    # - valid redirect URI: https://azul.local/*
+    # - roles mapper claim name: roles
+    # The Web UI reads this through /ui/assets/config.json and will then start the
+    # browser OIDC flow to Keycloak when an unauthenticated user opens /ui/.
+    enabled: true
     authority_url: "https://keycloak.local/realms/azul"
     client_id: "azul-web"
     scopes: "openid profile offline_access roles azul"
