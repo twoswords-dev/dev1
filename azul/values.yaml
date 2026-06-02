@@ -257,7 +257,7 @@ web:
     hosts:
     - azul.local
     ingressClassName: nginx
-    secretName: azul-web-tls
+    secretName: azul-external-web-tls
     security:
       enableHarden: true
       csp:

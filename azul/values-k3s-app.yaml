@@ -130,7 +130,7 @@ web:
     hosts:
       - azul.local
     ingressClassName: nginx
-    secretName: "azul-web-tls"
+    secretName: "azul-external-web-tls"
     annotations:
       nginx.ingress.kubernetes.io/proxy-body-size: 4096m
   replicas: 1

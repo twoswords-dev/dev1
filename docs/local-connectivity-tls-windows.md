@@ -180,7 +180,7 @@ Each HTTPS hostname must appear in the certificate SANs for the TLS secret used 
 
 Current ingresses are separate:
 
-- Azul: `azul.local` using `azul-web-tls` in namespace `azul-app`
+- Azul: `azul.local` using `azul-external-web-tls` in namespace `azul-app`
 - Keycloak: `keycloak.local` using `keycloak-tls` in namespace `azul-infra`
 - Rancher: `rancher.local` using its Rancher TLS secret
 - OpenSearch Dashboards: `opensearch-dashboards.local` using `dashboard-ingress-tls` in namespace `azul-infra`
@@ -192,9 +192,60 @@ You do **not** need to put both `azul.local` and `keycloak.local` on both ingres
 
 A single wildcard or multi-SAN certificate can cover many hosts, but each Ingress still needs the correct `rules.host` and `tls.hosts` entries for the host it serves.
 
-## 4. Installing the cluster CA on Windows
+## 4. Installing local CAs on Windows
 
-Use the script below from a machine that has `kubectl` access to the cluster:
+### Azul external Web TLS, not cert-manager
+
+Azul's browser ingress can use a manually-created TLS secret instead of cert-manager. The current secret is:
+
+```text
+namespace: azul-app
+secret: azul-external-web-tls
+```
+
+and the values point the web ingress at it:
+
+```yaml
+web:
+  ingress:
+    secretName: azul-external-web-tls
+```
+
+To recreate/update this manually-managed CA and `azul.local` leaf certificate, run from a machine with `kubectl` access:
+
+```bash
+scripts/create-azul-external-web-tls.sh
+```
+
+It creates:
+
+```text
+/tmp/azul-external-web-tls/
+  azul-local-root-ca.crt        # import this into Windows Trusted Root
+  azul-local-root-ca.key        # private CA key, do not commit
+  azul.local.crt                # leaf cert served by ingress
+  azul.local.key                # leaf private key stored in azul-external-web-tls
+  install-azul.local-root-ca.ps1
+```
+
+It also stores the CA material in Kubernetes, not git:
+
+```text
+azul-app/azul-external-root-ca
+```
+
+Copy `/tmp/azul-external-web-tls` to Windows, then run PowerShell as Administrator:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\install-azul.local-root-ca.ps1 -IngressIP 192.168.10.111
+```
+
+This imports only the root CA into Windows and adds a hosts-file entry for `azul.local`.
+
+### Infra CA for Keycloak/Rancher/OpenSearch Dashboards
+
+Keycloak and OpenSearch Dashboards are still using cert-manager/infra CA certificates. To export that CA for Windows, use:
 
 ```bash
 scripts/export-local-ca-for-windows.sh
@@ -214,11 +265,6 @@ Copy that folder to Windows, then run PowerShell as Administrator:
 Set-ExecutionPolicy -Scope Process Bypass
 .\install-azul-local-ca.ps1 -IngressIP 192.168.10.111
 ```
-
-The PowerShell script:
-
-- imports the CA certificate into Windows `LocalMachine\Root`
-- adds hosts-file entries for local ingress hostnames
 
 After that, restart your browser and open:
 
