@@ -150,24 +150,45 @@ security:
     scopes: "openid profile offline_access roles azul"
 
 sources:
+  # a source called 'testing'
   testing:
+    # how indexes are divided in opensearch by timestamp - year | month | week | day
     partition_unit: all
+    # Delete kafka and opensearch events after this amount of time.
+    # Values can be <number> days | weeks | months | years
     expire_events_after: 7 days
-    description: Files submitted during homelab testing of Azul
+    # description used in user interface for the source
+    description: Files submitted during testing of Azul
+    # controls if the recovery module will exclude this source (default false)
     exclude_from_backup: true
+    # settings for OpenSearch indices
     elastic:
-      number_of_replicas: 0
-      number_of_shards: 1
+      number_of_replicas: 2
+      number_of_shards: 3
+    # Font Awesome icon name to display in web interface.
     icon_class: trash-alt
+    # Descriptive fields to group entries in this source.
+    # define available keys for key-value pairs attached to each submissions to the source
     references:
+      # A brief description of this field name.
       - description: Local submitter or point of contact for samples
+        # The name of this field
         name: user
-        required: false
+        # Is this field require to be provided on all samples submitted into this source.
+        required: true
+        # Highlight this field.
         highlight: true
+    # configure kafka settings for topics related to the source
     kafka:
-      config:
-        segment.bytes: "1073741824"
+      # number of independent partitions available (max dispatcher concurrency)
+      # numpartitions: 3
+      # number of copies of each event within the kafka cluster
+      # replicationfactor: 1
+      # generic topic options, check kafka documentation for more information
 
+      config:
+        # size of the working set before being created as a segment
+        segment.bytes: "1073741824"
 limitRange:
   enabled: true
   spec:
