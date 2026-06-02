@@ -1,3 +1,7 @@
+# Consolidated Azul application values for Argo CD.
+# Starts from the upstream defaults, with the working airgap/k3s overrides applied.
+# Argo CD uses this file directly; values-k3s-app.yaml is kept only as historical reference.
+
 namespace:
   create: true
   secure: false
@@ -560,8 +564,8 @@ sources:
     description: Files submitted during testing of Azul
     exclude_from_backup: true
     elastic:
-      number_of_replicas: 0
-      number_of_shards: 1
+      number_of_replicas: 2
+      number_of_shards: 3
     icon_class: trash-alt
     references:
     - description: Local submitter or point of contact for samples
