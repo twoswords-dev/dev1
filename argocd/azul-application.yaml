@@ -11,9 +11,6 @@ spec:
     repoURL: http://192.168.10.150:3002/twoswords/azul-app.git
     targetRevision: azul-old
     path: azul
-    helm:
-      valueFiles:
-        - values-k3s-app.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: azul-app
