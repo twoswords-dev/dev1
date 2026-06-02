@@ -2,6 +2,7 @@
 ---
 apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
+# Node pools keep the single KRaft broker/controller explicit for the small k3s profile.
 metadata:
   name: nodes
   annotations:
@@ -69,6 +70,7 @@ metadata:
     strimzi.io/kraft: enabled
 spec:
   kafka:
+    # Replication-related values are tuned in values.yaml for a one-broker local cluster.
     version: {{ .Values.kafka.version }}
     metadataVersion: {{ .Values.kafka.metadataVersion }}
     {{- if .Values.kafka.rackTopologyOverride }}

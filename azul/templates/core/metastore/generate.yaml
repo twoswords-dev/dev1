@@ -1,5 +1,6 @@
 {{- $cmSHA256 := (include (print $.Template.BasePath "/core/metastore/config.yaml") . | sha256sum )}}
 {{- range $k, $instance := .Values.metastore.instances}}
+{{/* The ingest-plugin metastore only exists when plugin processing is enabled. */}}
 {{- if or $.Values.pluginsEnabled (ne $k "ingest-plugin") }}
 {{- $name := printf "ms-%s" $k}}
 {{- include "metastore.deployment" (dict "root" $ "name" $name "config" $instance "coreHPA" $.Values.coreHPA "cmSHA256" $cmSHA256)}}

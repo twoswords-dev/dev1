@@ -1,4 +1,5 @@
 {{- if and .Values.certManager.enabled .Values.certManager.selfSigned }}
+{{/* Local issuer used for internal service TLS; external ingress certs may still be supplied manually. */}}
 ---
 apiVersion: cert-manager.io/v1
 kind: Issuer

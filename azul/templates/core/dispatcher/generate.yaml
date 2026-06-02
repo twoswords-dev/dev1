@@ -4,12 +4,14 @@
 {{- include "dispatcher.deployment" (dict "root" . "name" "dp-metastore-events" "config" $cfg.metastore.events "cmSHA256" $cmSHA256 "noProbes" "false" )}}
 {{- include "dispatcher.deployment" (dict "root" . "name" "dp-metastore-streams" "config" $cfg.metastore.streams "cmSHA256" $cmSHA256 "noProbes" "false" )}}
 {{- if .Values.pluginsEnabled }}
+{{/* Plugin dispatchers are omitted entirely when the lean k3s profile disables plugins. */}}
 {{- include "dispatcher.deployment" (dict "root" . "name" "dp-plugin-events" "config" $cfg.plugin.events "cmSHA256" $cmSHA256 "noProbes" "false" )}}
 {{- include "dispatcher.deployment" (dict "root" . "name" "dp-plugin-streams" "config" $cfg.plugin.streams "cmSHA256" $cmSHA256 "noProbes" "false" )}}
 {{- end }}
 {{- include "dispatcher.service" (dict "root" . "name" "dp-metastore-events" "app" "dp-metastore-events")}}
 {{- include "dispatcher.service" (dict "root" . "name" "dp-metastore-streams" "app" "dp-metastore-streams")}}
 {{- if .Values.pluginsEnabled }}
+{{/* Keep plugin services aligned with the gated plugin dispatcher deployments. */}}
 {{- include "dispatcher.service" (dict "root" . "name" "dp-plugin-events" "app" "dp-plugin-events")}}
 {{- include "dispatcher.service" (dict "root" . "name" "dp-plugin-streams" "app" "dp-plugin-streams")}}
 {{- end }}

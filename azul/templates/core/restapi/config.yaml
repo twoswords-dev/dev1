@@ -25,6 +25,7 @@ data:
   RESTAPI_SECURITY: "oidc"
     {{- end }}
 
+  # Prefer the in-cluster authority URL when set so REST API validation does not depend on external DNS.
   OIDC_AUTHORITY_URL: "{{ .Values.restapi.oidc.authority_url | default .Values.security.oidc.authority_url | required "oidc authority_url required" }}"
   OIDC_CLIENT_ID: "{{ .Values.security.oidc.client_id | required "oidc client_id required" }}"
   OIDC_SCOPES: "{{ .Values.security.oidc.scopes | required "oidc scopes required" }}"

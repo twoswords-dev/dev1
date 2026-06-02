@@ -3,6 +3,7 @@
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
+# Internal Keycloak HTTPS cert; the browser ingress can use a separate TLS secret.
 metadata:
   name: keycloak-internal-tls
 spec:
@@ -75,6 +76,7 @@ spec:
         image: {{ .Values.keycloak.image }}
         args:
           - start
+          # Keep Keycloak's advertised hostname aligned with the ingress/OIDC issuer.
           - --hostname={{ .Values.keycloak.hostnameArg | default .Values.keycloak.ingress.hostname }}
           - --proxy-headers={{ .Values.keycloak.proxyHeaderArg }}
 {{- range .Values.keycloak.extraArgs }}

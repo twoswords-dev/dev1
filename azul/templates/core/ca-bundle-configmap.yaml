@@ -1,4 +1,5 @@
 {{- if .Values.CACertificateConfigMap }}
+{{/* Bundles local/internal CAs for components that call Keycloak and OpenSearch over HTTPS. */}}
 {{- $bundle := .Files.Get "ca-certificates" }}
 {{- if $bundle }}
 ---

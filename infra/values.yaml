@@ -61,6 +61,7 @@ disableNetworkPolicies: []
 customNetworkPolicies: []
 minio:
   main:
+    # Single-node object storage profile for the local Azul deployment.
     enable: true
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     secretName: s3-keys
@@ -675,6 +676,7 @@ opensearch:
 kafka:
   enable: true
   name: azul-kafka
+  # KRaft single-node settings trade HA for a smaller always-on k3s footprint.
   version: 4.2.0
   metadataVersion: 4.2-IV0
   replicas: 1
@@ -715,6 +717,7 @@ kafka:
     message.max.bytes: 4194352
     compression.type: snappy
 keycloak:
+  # Keycloak remains the shared OIDC provider for Azul and OpenSearch Dashboards.
   enable: true
   image: quay.io/keycloak/keycloak:26.1
   replicas: 1
@@ -765,6 +768,7 @@ keycloak:
       limits:
         memory: 512Mi
         cpu: 500m
+# Monitoring/logging stacks are present in values but disabled for the lean local profile.
 kube-prometheus-stack:
   fullnameOverride: kube-prometheus-stack
   enable: false
