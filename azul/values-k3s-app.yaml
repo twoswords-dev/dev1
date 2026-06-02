@@ -141,8 +141,8 @@ security:
     # Keep OIDC disabled for the first core rollout; the CA bundle already trusts Keycloak TLS.
     enabled: false
     authority_url: "https://keycloak.azul-infra.svc.cluster.local/realms/azul"
-    client_id: "azul"
-    scopes: "openid profile email"
+    client_id: "azul-web"
+    scopes: "openid profile offline_access roles azul"
 
 sources:
   testing:
