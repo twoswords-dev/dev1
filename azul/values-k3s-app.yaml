@@ -190,6 +190,11 @@ docs:
       cpu: 100m
 
 restapi:
+  # Server-side token validation must fetch Keycloak metadata from inside the
+  # cluster. Keep security.oidc.authority_url as the public browser/issuer URL
+  # for the Web UI, but use the Keycloak service DNS here.
+  oidc:
+    authority_url: "https://keycloak.azul-infra.svc.cluster.local/realms/azul"
   minReplicas: 1
   maxReplicas: 1
   resources:

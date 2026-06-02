@@ -152,14 +152,20 @@ Apply with:
 kubectl apply -f creds.yaml
 ```
 
-- After activating the Helm chart, copy the CA certificate (stored in the ca-cert
-  secret) to Azul's namespace and append to your CA cert list.
+- After activating the Helm chart, ensure Azul application pods trust the CA that
+  issued OpenSearch and Keycloak certificates. In the Azul core chart this is the
+  ConfigMap named by `CACertificateConfigMap` (for k3s: `azul-ca-bundle` in
+  `azul/values-k3s-app.yaml`). The ConfigMap key is `ca.crt` and pods mount it as
+  `/cafile/ca.crt`.
 
-  To pull this certificate, fetch the crt from the secret
-  (`kubectl get secret azul-cluster-ca -o yaml`), and base64 decode.
+  For this k3s install the relevant issuer CA is normally in:
 
-- Finally, append to the secret pointed to by `CACertificateConfigMap` in your core
-  values.yaml.
+  ```bash
+  kubectl -n azul-infra get secret azul-infra-ca -o jsonpath='{.data.ca\.crt}' | base64 -d
+  ```
+
+  Append that certificate to `azul/ca-certificates` and resync the Azul app, or
+  patch/create the live ConfigMap in `azul-app` if you are testing manually.
 
 **IMPORTANT**: The OpenSearch Operator does not currently support hot
 certificate rotation. While Cert Manager will automatically

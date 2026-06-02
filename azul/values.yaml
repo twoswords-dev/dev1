@@ -1005,6 +1005,10 @@ restapi:
     usernameKey: "preferred_username"
     cacheTTL: "600"
     swaggerRedirectUrl: "/api/oauth2-redirect"
+    # Optional server-side OIDC authority URL for REST API token validation.
+    # Defaults to security.oidc.authority_url. This is useful when the browser
+    # must use a public ingress host while pods must use an in-cluster service DNS.
+    authority_url: ""
   config:
     ca_bundle: "/cafile/ca.crt"
     host: "0.0.0.0"
