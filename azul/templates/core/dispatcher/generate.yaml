@@ -3,16 +3,22 @@
 # 4 versions of dispatcher that have different responsibilities
 {{- include "dispatcher.deployment" (dict "root" . "name" "dp-metastore-events" "config" $cfg.metastore.events "cmSHA256" $cmSHA256 "noProbes" "false" )}}
 {{- include "dispatcher.deployment" (dict "root" . "name" "dp-metastore-streams" "config" $cfg.metastore.streams "cmSHA256" $cmSHA256 "noProbes" "false" )}}
+{{- if .Values.pluginsEnabled }}
 {{- include "dispatcher.deployment" (dict "root" . "name" "dp-plugin-events" "config" $cfg.plugin.events "cmSHA256" $cmSHA256 "noProbes" "false" )}}
 {{- include "dispatcher.deployment" (dict "root" . "name" "dp-plugin-streams" "config" $cfg.plugin.streams "cmSHA256" $cmSHA256 "noProbes" "false" )}}
+{{- end }}
 {{- include "dispatcher.service" (dict "root" . "name" "dp-metastore-events" "app" "dp-metastore-events")}}
 {{- include "dispatcher.service" (dict "root" . "name" "dp-metastore-streams" "app" "dp-metastore-streams")}}
+{{- if .Values.pluginsEnabled }}
 {{- include "dispatcher.service" (dict "root" . "name" "dp-plugin-events" "app" "dp-plugin-events")}}
 {{- include "dispatcher.service" (dict "root" . "name" "dp-plugin-streams" "app" "dp-plugin-streams")}}
+{{- end }}
 {{- include "dispatcher.pdb" (dict "root" . "name" "dp-metastore-events" "app" "dp-metastore-events" "config" $cfg.metastore.events )}}
 {{- include "dispatcher.pdb" (dict "root" . "name" "dp-metastore-streams" "app" "dp-metastore-streams" "config" $cfg.metastore.streams )}}
+{{- if .Values.pluginsEnabled }}
 {{- include "dispatcher.pdb" (dict "root" . "name" "dp-plugin-events" "app" "dp-plugin-events" "config" $cfg.plugin.events )}}
 {{- include "dispatcher.pdb" (dict "root" . "name" "dp-plugin-streams" "app" "dp-plugin-streams" "config" $cfg.plugin.streams )}}
+{{- end }}
 
 {{/* Migrations */}}
 {{- $root := . }}
