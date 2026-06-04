@@ -6,12 +6,6 @@ imagePullSecrets: []
 tolerations: []
 affinity: {}
 podAnnotations: {}
-
-# certManager is still useful even when your browser-facing HTTPS uses a
-# company-provided SAN certificate. Keep this enabled for internal/service TLS
-# and operator webhook certificates unless your platform team provides a full
-# replacement. The company cert approach below only changes external ingress
-# TLS secrets/annotations.
 certManager:
   enabled: true
   selfSigned: true
@@ -61,7 +55,6 @@ disableNetworkPolicies: []
 customNetworkPolicies: []
 minio:
   main:
-    # Single-node object storage profile for the local Azul deployment.
     enable: true
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     secretName: s3-keys
@@ -89,10 +82,6 @@ minio:
         enable: true
         host: minio.local
       ingressClassName: nginx
-      # Company SAN cert option: create this TLS secret manually in azul-infra
-      # using the company full-chain cert/key. If using that approach, remove or
-      # comment out cert-manager.io/issuer below so cert-manager does not
-      # overwrite the secret.
       secretName: minio-tls
       annotations:
         cert-manager.io/issuer: azul-infra-ca
@@ -125,8 +114,6 @@ minio:
         enable: true
         host: minio-backup.local
       ingressClassName: nginx
-      # Company SAN cert option: create this TLS secret manually in azul-infra
-      # and remove/comment cert-manager.io/issuer below if this ingress is used.
       secretName: minio-backup-tls
       annotations:
         cert-manager.io/issuer: azul-infra-ca
@@ -188,9 +175,6 @@ opensearch:
       enable: true
       ingressClassName: nginx
       host: opensearch-dashboards.local
-      # Company SAN cert option: create this TLS secret manually in azul-infra
-      # using the same company full-chain cert/key used for the other external
-      # hostnames. Then remove/comment cert-manager.io/issuer below.
       secretName: dashboard-ingress-tls
       annotations:
         cert-manager.io/issuer: azul-infra-ca
@@ -207,6 +191,13 @@ opensearch:
       configMap:
         name: azul-opensearch-certs
       restartPods: true
+    resources:
+      requests:
+        memory: 768Mi
+        cpu: 200m
+      limits:
+        memory: 768Mi
+        cpu: 200m
     additionalConfig:
       opensearch_security.multitenancy.enabled: 'true'
       opensearch_security.multitenancy.tenants.preferred: '["Private", "Global"]'
@@ -676,7 +667,6 @@ opensearch:
 kafka:
   enable: true
   name: azul-kafka
-  # KRaft single-node settings trade HA for a smaller always-on k3s footprint.
   version: 4.2.0
   metadataVersion: 4.2-IV0
   replicas: 1
@@ -717,7 +707,6 @@ kafka:
     message.max.bytes: 4194352
     compression.type: snappy
 keycloak:
-  # Keycloak remains the shared OIDC provider for Azul and OpenSearch Dashboards.
   enable: true
   image: quay.io/keycloak/keycloak:26.1
   replicas: 1
@@ -733,9 +722,6 @@ keycloak:
   extraArgs:
   - --hostname-backchannel-dynamic=true
   tls:
-    # Internal Keycloak pod/service TLS. Keep cert-manager here unless you also
-    # want to manage Keycloak's in-cluster HTTPS cert yourself. This is separate
-    # from the external browser ingress certificate below.
     enabled: true
     secretName: keycloak-internal-tls
     issuerRef:
@@ -745,14 +731,6 @@ keycloak:
     renewBefore: 8760h0m0s
   ingress:
     hostname: keycloak.local
-    # Company SAN cert option:
-    # 1. Ensure the company cert SAN includes this hostname.
-    # 2. Create this secret manually in azul-infra, for example:
-    #      kubectl -n azul-infra create secret tls keycloak-tls \
-    #        --cert=company-fullchain.crt --key=company.key \
-    #        --dry-run=client -o yaml | kubectl apply -f -
-    # 3. Remove/comment cert-manager.io/issuer below so cert-manager does not
-    #    replace the company-provided secret.
     secretName: keycloak-tls
     annotations:
       cert-manager.io/issuer: azul-infra-ca
@@ -768,7 +746,7 @@ keycloak:
       limits:
         memory: 512Mi
         cpu: 500m
-# Monitoring/logging stacks are present in values but disabled for the lean local profile.
+    image: postgres:17.4
 kube-prometheus-stack:
   fullnameOverride: kube-prometheus-stack
   enable: false
