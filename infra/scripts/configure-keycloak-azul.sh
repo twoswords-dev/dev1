@@ -26,6 +26,7 @@ OPENSEARCH_ADMIN_USER="${OPENSEARCH_ADMIN_USER:-opensearch-admin}"
 OPENSEARCH_ADMIN_PASSWORD="${OPENSEARCH_ADMIN_PASSWORD:-OpenSearchAdmin1!}"
 SERVICE_CLIENT_ID="${SERVICE_CLIENT_ID:-azul-service}"
 CREATE_AZUL_SERVICE_SECRET="${CREATE_AZUL_SERVICE_SECRET:-true}"
+CREATE_OPENSEARCH_DASHBOARDS_SECRET="${CREATE_OPENSEARCH_DASHBOARDS_SECRET:-true}"
 
 command -v kubectl >/dev/null
 command -v curl >/dev/null
@@ -249,6 +250,14 @@ add_default_scope_to_client azul-web audience
 ensure_client opensearch-dashboards false true false false "$OSD_ROOT"
 add_default_scope_to_client opensearch-dashboards azul
 add_default_scope_to_client opensearch-dashboards audience
+OSD_SECRET="$(client_secret opensearch-dashboards)"
+
+if [[ "$CREATE_OPENSEARCH_DASHBOARDS_SECRET" == "true" ]]; then
+  kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+  kubectl -n "$NAMESPACE" create secret generic opensearch-dashboards-oidc \
+    --from-literal=client-secret="$OSD_SECRET" \
+    --dry-run=client -o yaml | kubectl apply -f -
+fi
 
 ensure_client "$SERVICE_CLIENT_ID" false true true true "$AZUL_ROOT"
 add_default_scope_to_client "$SERVICE_CLIENT_ID" azul
