@@ -118,7 +118,7 @@ Use `applications.argoproj.io`; plain `kubectl get app` can resolve to Rancher `
 
 ## 6. Configure Keycloak for Azul
 
-Run after Keycloak is ready:
+Run after Keycloak is ready. This also creates/updates the Kubernetes Secret `azul-infra/opensearch-dashboards-oidc`, which OpenSearch Dashboards needs for its OIDC client secret.
 
 ```bash
 KEYCLOAK_URL=https://keycloak.local \

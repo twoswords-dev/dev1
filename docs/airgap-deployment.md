@@ -70,7 +70,7 @@ kubectl apply -f argocd/azul-airgap-application.yaml
 kubectl -n argocd get applications.argoproj.io azul-airgap -w
 ```
 
-6. Configure Keycloak and OpenSearch security after pods are ready:
+6. Configure Keycloak and OpenSearch security after pods are ready. The Keycloak script also creates/updates `azul-infra/opensearch-dashboards-oidc`, which OpenSearch Dashboards uses for its OIDC client secret:
 
 ```bash
 KEYCLOAK_URL=https://keycloak.interal.au \
