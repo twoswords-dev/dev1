@@ -6,7 +6,8 @@ This branch contains an airgap profile for a larger k3s cluster using `*.interna
 
 - Helm dependency charts: `airgap/charts/*.tgz` and `infra/charts/*.tgz`
 - Target image manifest: `airgap/images/images.txt`
-- Source-to-private-registry image map: `airgap/images/images-map.tsv`
+- Source-to-private-registry image map used by scripts: `airgap/images/images-map.tsv`
+- Human-readable airgap-to-original download map: `airgap/images/images-download-map.tsv`
 - Image bundle helper scripts: `airgap/images/pull-save-images.sh`, `load-images.sh`, `push-images.sh`
 - Airgap Helm values: `infra/values-airgap.yaml`, `azul/values-airgap.yaml`
 - Argo CD apps: `argocd/azul-infra-airgap-application.yaml`, `argocd/azul-airgap-application.yaml`

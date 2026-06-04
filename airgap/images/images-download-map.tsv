@@ -1,0 +1,22 @@
+# airgap_image	original_source_image
+# Pull original_source_image on a connected host, then tag/push it as airgap_image.
+registry-1.docker.io/asdazul/dispatcher:10.0.0	docker.io/asdazul/dispatcher:10.0.0
+registry-1.docker.io/asdazul/docs:10.0.0	docker.io/asdazul/docs:10.0.0
+registry-1.docker.io/asdazul/restapi-server:10.0.0	docker.io/asdazul/restapi-server:10.0.0
+registry-1.docker.io/asdazul/webui:10.0.0	docker.io/asdazul/webui:10.0.0
+registry-1.docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z	docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+registry-1.docker.io/opensearchproject/opensearch:3.2.0	docker.io/opensearchproject/opensearch:3.2.0
+registry-1.docker.io/opensearchproject/opensearch-dashboards:3.2.0	docker.io/opensearchproject/opensearch-dashboards:3.2.0
+registry-1.docker.io/opensearchproject/opensearch-operator:3.0.0-alpha	docker.io/opensearchproject/opensearch-operator:3.0.0-alpha
+registry-1.docker.io/postgres:17.4	docker.io/postgres:17.4
+registry-1.docker.io/quay.io/keycloak/keycloak:26.1	quay.io/keycloak/keycloak:26.1
+registry-1.docker.io/quay.io/strimzi/buildah:1.0.0	quay.io/strimzi/buildah:1.0.0
+registry-1.docker.io/quay.io/strimzi/kafka:1.0.0-kafka-4.1.0	quay.io/strimzi/kafka:1.0.0-kafka-4.1.0
+registry-1.docker.io/quay.io/strimzi/kafka:1.0.0-kafka-4.1.1	quay.io/strimzi/kafka:1.0.0-kafka-4.1.1
+registry-1.docker.io/quay.io/strimzi/kafka:1.0.0-kafka-4.1.2	quay.io/strimzi/kafka:1.0.0-kafka-4.1.2
+registry-1.docker.io/quay.io/strimzi/kafka:1.0.0-kafka-4.2.0	quay.io/strimzi/kafka:1.0.0-kafka-4.2.0
+registry-1.docker.io/quay.io/strimzi/kafka-bridge:1.0.0	quay.io/strimzi/kafka-bridge:1.0.0
+registry-1.docker.io/quay.io/strimzi/kaniko-executor:1.0.0	quay.io/strimzi/kaniko-executor:1.0.0
+registry-1.docker.io/quay.io/strimzi/maven-builder:1.0.0	quay.io/strimzi/maven-builder:1.0.0
+registry-1.docker.io/quay.io/strimzi/operator:1.0.0	quay.io/strimzi/operator:1.0.0
+registry-1.docker.io/redis:8.6.1-trixie	docker.io/redis:8.6.1-trixie
