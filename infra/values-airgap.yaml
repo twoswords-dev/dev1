@@ -174,7 +174,7 @@ opensearch:
   additionalCerts: {}
   ingress:
     enable: false
-    ingressClassName: default
+    ingressClassName: nginx
     host: opensearch.azul.internal
     secretName: opensearch-tls
     annotations:

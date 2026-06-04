@@ -12,9 +12,7 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 pipconfig: null
-# Longhorn is the persistent storage backend kept online by the cluster stop/start scripts.
 storageClassName: longhorn
-# Optional trust bundle mounted into API components for internal Keycloak/OpenSearch TLS.
 CACertificateConfigMap: azul-ca-bundle
 networkPolicy: false
 istioEnabled: false
@@ -31,7 +29,6 @@ limitRange:
         cpu: 300m
         memory: 512Mi
       type: Container
-# Keep the local k3s profile intentionally single-replica; HPAs are retained but capped.
 coreHPA:
   averageUtilization: 100
   maxReplicas: 1
@@ -264,15 +261,6 @@ web:
     hosts:
     - azul.local
     ingressClassName: nginx
-    # Company SAN cert option:
-    # 1. Ensure the company cert SAN includes this hostname.
-    # 2. Create this TLS secret in azul-app with the company full-chain cert/key:
-    #      kubectl -n azul-app create secret tls azul-external-web-tls \
-    #        --cert=company-fullchain.crt --key=company.key \
-    #        --dry-run=client -o yaml | kubectl apply -f -
-    # 3. You may use the same physical cert/key as Keycloak, but the secret must
-    #    exist separately in each namespace because Kubernetes secrets are
-    #    namespace-scoped.
     secretName: azul-external-web-tls
     security:
       enableHarden: true
@@ -513,7 +501,6 @@ restapi:
     usernameKey: preferred_username
     cacheTTL: '600'
     swaggerRedirectUrl: /api/oauth2-redirect
-    # Server-side token validation uses the in-cluster Keycloak URL; browser-facing OIDC stays below.
     authority_url: https://keycloak.azul-infra.svc.cluster.local/realms/azul
   config:
     ca_bundle: /cafile/ca.crt
@@ -523,12 +510,15 @@ restapi:
     asyncioWorkers: 1
     logLevel: INFO
   env: {}
+  persistentVolumeClaimRetentionPolicy:
+    enabled: true
+    whenScaled: Retain
+    whenDeleted: Retain
 security:
   admin_roles:
   - admin
   oidc:
     enabled: true
-    # Browser-facing issuer URL advertised to web clients and Swagger.
     authority_url: https://keycloak.local/realms/azul
     client_id: azul-web
     scopes: openid profile offline_access roles azul
@@ -593,7 +583,6 @@ pluginConfig:
   RUNNER_LOG_LEVEL: info
   ENABLE_MEM_LIMITS: 'true'
   PLUGIN_DEPTH_LIMIT: '10'
-# Disable plugin workloads for the base k3s footprint; guarded templates avoid rendering their dependencies.
 pluginsEnabled: false
 plugins:
   assemblyline:

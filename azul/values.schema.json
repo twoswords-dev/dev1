@@ -927,6 +927,10 @@
         "resources": {
           "type": "object"
         },
+        "persistentVolumeClaimRetentionPolicy":{
+          "type": "object",
+          "additionalProperties": true
+        },
         "topologySpreadConstraints": {
           "type": "array",
           "allOf": [

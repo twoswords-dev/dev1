@@ -8,6 +8,13 @@ metadata:
     component: frontend
 spec:
   revisionHistoryLimit: 1
+  {{- with .Values.restapi.persistentVolumeClaimRetentionPolicy }}
+  {{- if .enabled }}
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: {{ .whenDeleted | default "Retain" }}
+    whenScaled: {{ .whenScaled | default "Retain" }}
+  {{- end }}
+  {{- end }}
   selector:
     matchLabels:
       app: restapi
@@ -183,6 +190,9 @@ spec:
   volumeClaimTemplates:
   - metadata:
       name: logs
+      annotations:
+        helm.sh/resource-policy: "keep"
+        argocd.argoproj.io/sync-options: "Prune=false"
     spec:
       accessModes: ["ReadWriteOnce"]
       storageClassName: {{ .Values.storageClassName | required (printf "missing storage class for restapi") }}
@@ -191,6 +201,9 @@ spec:
           storage: {{ .Values.restapi.logPvcSize }}
   - metadata:
       name: purge-dir
+      annotations:
+        helm.sh/resource-policy: "keep"
+        argocd.argoproj.io/sync-options: "Prune=false"
     spec:
       accessModes: ["ReadWriteOnce"]
       storageClassName: {{ .Values.storageClassName | required (printf "missing storage class for restapi") }}

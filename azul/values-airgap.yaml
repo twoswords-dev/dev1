@@ -85,7 +85,7 @@ external:
     ingress:
       enabled: false
       hosts: []
-      ingressClassName: default
+      ingressClassName: nginx
       secretName: redis-tls
       annotations: {}
       security:
@@ -301,7 +301,7 @@ dispatcher:
   ingress:
     enabled: false
     hosts: []
-    ingressClassName: default
+    ingressClassName: nginx
     secretName: dispatcher-tls
     annotations: {}
     security:
@@ -508,6 +508,10 @@ restapi:
     asyncioWorkers: 4
     logLevel: INFO
   env: {}
+  persistentVolumeClaimRetentionPolicy:
+    enabled: true
+    whenScaled: Retain
+    whenDeleted: Retain
 security:
   admin_roles:
   - admin
