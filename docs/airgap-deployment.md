@@ -13,7 +13,7 @@ This branch contains an airgap profile for a larger k3s cluster using `*.interna
 
 ## Capacity profile
 
-- OpenSearch: 3 data/cluster-manager nodes, 2Ti each, 12Gi/4 CPU requested per node.
+- OpenSearch: 3 data/cluster-manager nodes, 2Ti each, 12Gi/4 CPU requested per node, 16Gi/8 CPU limit per node, JVM heap fixed at `-Xms8g -Xmx8g`.
 - Kafka: 3 brokers/controllers, 1Ti each, replication factor 3, min ISR 2.
 - MinIO: 3 replicas, 5Ti requested storage.
 - Keycloak: 2 replicas; Postgres PVC 100Gi.

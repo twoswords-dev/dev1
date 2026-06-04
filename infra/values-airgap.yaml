@@ -163,6 +163,7 @@ opensearch:
         - /bin/bash
         - -c
         - curl -k --silent https://localhost:9200 >/dev/null
+    jvm: -Xms8g -Xmx8g
   selfSigned: false
   issuerRef:
     name: azul-infra-ca
