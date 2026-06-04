@@ -1,0 +1,85 @@
+apiVersion: v1
+items:
+- apiVersion: kafka.strimzi.io/v1
+  kind: KafkaNodePool
+  metadata:
+    annotations:
+      argocd.argoproj.io/sync-wave: "10"
+      argocd.argoproj.io/tracking-id: azul-infra:kafka.strimzi.io/KafkaNodePool:azul-infra/nodes
+    creationTimestamp: "2026-05-24T12:30:15Z"
+    generation: 1
+    labels:
+      strimzi.io/cluster: azul-kafka
+    name: nodes
+    namespace: azul-infra
+    resourceVersion: "29437"
+    uid: f57f9227-e8e2-4616-bda8-962e9c2b14d0
+  spec:
+    jvmOptions:
+      -Xms: 512m
+      -Xmx: 512m
+    replicas: 1
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1536Mi
+      requests:
+        cpu: 250m
+        memory: 1Gi
+    roles:
+    - controller
+    - broker
+    storage:
+      type: jbod
+      volumes:
+      - class: longhorn
+        deleteClaim: false
+        id: 0
+        kraftMetadata: shared
+        size: 5Gi
+        type: persistent-claim
+    template:
+      initContainer:
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+      kafkaContainer:
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+      pod:
+        metadata:
+          annotations:
+            prometheus.io/path: /metrics
+            prometheus.io/port: "9404"
+            prometheus.io/scrape: "true"
+  status:
+    clusterId: iolgD2VMSRGO6yGhH1jMRQ
+    conditions: []
+    labelSelector: strimzi.io/cluster=azul-kafka,strimzi.io/name=azul-kafka-kafka,strimzi.io/kind=Kafka,strimzi.io/pool-name=nodes
+    nodeIds:
+    - 0
+    observedGeneration: 1
+    replicas: 1
+    roles:
+    - controller
+    - broker
+kind: List
+metadata:
+  resourceVersion: ""

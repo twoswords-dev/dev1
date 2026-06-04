@@ -1,0 +1,209 @@
+apiVersion: v1
+items:
+- apiVersion: autoscaling/v2
+  kind: HorizontalPodAutoscaler
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: azul:autoscaling/HorizontalPodAutoscaler:azul-app/ms-ageoff
+    creationTimestamp: "2026-05-25T12:37:33Z"
+    name: ms-ageoff
+    namespace: azul-app
+    resourceVersion: "941509"
+    uid: ab5bee99-c232-4153-b42c-c19b038ee723
+  spec:
+    maxReplicas: 1
+    metrics:
+    - resource:
+        name: cpu
+        target:
+          averageUtilization: 100
+          type: Utilization
+      type: Resource
+    minReplicas: 1
+    scaleTargetRef:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: ms-ageoff
+  status:
+    conditions:
+    - lastTransitionTime: "2026-05-25T12:37:49Z"
+      message: recommended size matches current size
+      reason: ReadyForNewScale
+      status: "True"
+      type: AbleToScale
+    - lastTransitionTime: "2026-06-03T10:39:29Z"
+      message: the HPA was able to successfully calculate a replica count from cpu
+        resource utilization (percentage of request)
+      reason: ValidMetricFound
+      status: "True"
+      type: ScalingActive
+    - lastTransitionTime: "2026-06-02T09:16:57Z"
+      message: the desired count is within the acceptable range
+      reason: DesiredWithinRange
+      status: "False"
+      type: ScalingLimited
+    currentMetrics:
+    - resource:
+        current:
+          averageUtilization: 1
+          averageValue: 1m
+        name: cpu
+      type: Resource
+    currentReplicas: 1
+    desiredReplicas: 1
+- apiVersion: autoscaling/v2
+  kind: HorizontalPodAutoscaler
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: azul:autoscaling/HorizontalPodAutoscaler:azul-app/ms-ingest-binary
+    creationTimestamp: "2026-05-25T12:37:33Z"
+    name: ms-ingest-binary
+    namespace: azul-app
+    resourceVersion: "930241"
+    uid: 0781c5f9-17bc-4d0a-8472-d73eacf2b05a
+  spec:
+    maxReplicas: 1
+    metrics:
+    - resource:
+        name: cpu
+        target:
+          averageUtilization: 100
+          type: Utilization
+      type: Resource
+    minReplicas: 1
+    scaleTargetRef:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: ms-ingest-binary
+  status:
+    conditions:
+    - lastTransitionTime: "2026-05-25T12:37:49Z"
+      message: recommended size matches current size
+      reason: ReadyForNewScale
+      status: "True"
+      type: AbleToScale
+    - lastTransitionTime: "2026-06-03T10:39:45Z"
+      message: the HPA was able to successfully calculate a replica count from cpu
+        resource utilization (percentage of request)
+      reason: ValidMetricFound
+      status: "True"
+      type: ScalingActive
+    - lastTransitionTime: "2026-05-25T13:16:51Z"
+      message: the desired count is within the acceptable range
+      reason: DesiredWithinRange
+      status: "False"
+      type: ScalingLimited
+    currentMetrics:
+    - resource:
+        current:
+          averageUtilization: 1
+          averageValue: 1m
+        name: cpu
+      type: Resource
+    currentReplicas: 1
+    desiredReplicas: 1
+- apiVersion: autoscaling/v2
+  kind: HorizontalPodAutoscaler
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: azul:autoscaling/HorizontalPodAutoscaler:azul-app/ms-ingest-status
+    creationTimestamp: "2026-05-25T12:37:33Z"
+    name: ms-ingest-status
+    namespace: azul-app
+    resourceVersion: "930046"
+    uid: 4d29a730-9078-4f6f-a1dd-256d4670c30e
+  spec:
+    maxReplicas: 1
+    metrics:
+    - resource:
+        name: cpu
+        target:
+          averageUtilization: 100
+          type: Utilization
+      type: Resource
+    minReplicas: 1
+    scaleTargetRef:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: ms-ingest-status
+  status:
+    conditions:
+    - lastTransitionTime: "2026-05-25T12:37:49Z"
+      message: recommended size matches current size
+      reason: ReadyForNewScale
+      status: "True"
+      type: AbleToScale
+    - lastTransitionTime: "2026-06-03T10:39:29Z"
+      message: the HPA was able to successfully calculate a replica count from cpu
+        resource utilization (percentage of request)
+      reason: ValidMetricFound
+      status: "True"
+      type: ScalingActive
+    - lastTransitionTime: "2026-05-25T13:21:25Z"
+      message: the desired count is within the acceptable range
+      reason: DesiredWithinRange
+      status: "False"
+      type: ScalingLimited
+    currentMetrics:
+    - resource:
+        current:
+          averageUtilization: 1
+          averageValue: 1m
+        name: cpu
+      type: Resource
+    currentReplicas: 1
+    desiredReplicas: 1
+- apiVersion: autoscaling/v2
+  kind: HorizontalPodAutoscaler
+  metadata:
+    annotations:
+      argocd.argoproj.io/tracking-id: azul:autoscaling/HorizontalPodAutoscaler:azul-app/restapi
+    creationTimestamp: "2026-05-25T12:37:33Z"
+    name: restapi
+    namespace: azul-app
+    resourceVersion: "951781"
+    uid: bda6858e-5e3b-424d-88c8-74b3c29b0186
+  spec:
+    maxReplicas: 1
+    metrics:
+    - resource:
+        name: cpu
+        target:
+          averageUtilization: 100
+          type: Utilization
+      type: Resource
+    minReplicas: 1
+    scaleTargetRef:
+      apiVersion: apps/v1
+      kind: StatefulSet
+      name: restapi
+  status:
+    conditions:
+    - lastTransitionTime: "2026-05-25T12:37:49Z"
+      message: recommended size matches current size
+      reason: ReadyForNewScale
+      status: "True"
+      type: AbleToScale
+    - lastTransitionTime: "2026-06-03T10:39:29Z"
+      message: the HPA was able to successfully calculate a replica count from cpu
+        resource utilization (percentage of request)
+      reason: ValidMetricFound
+      status: "True"
+      type: ScalingActive
+    - lastTransitionTime: "2026-06-02T14:21:13Z"
+      message: the desired count is within the acceptable range
+      reason: DesiredWithinRange
+      status: "False"
+      type: ScalingLimited
+    currentMetrics:
+    - resource:
+        current:
+          averageUtilization: 3
+          averageValue: 3m
+        name: cpu
+      type: Resource
+    currentReplicas: 1
+    desiredReplicas: 1
+kind: List
+metadata:
+  resourceVersion: ""

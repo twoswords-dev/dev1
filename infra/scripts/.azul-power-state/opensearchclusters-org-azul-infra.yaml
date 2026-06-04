@@ -1,0 +1,141 @@
+apiVersion: v1
+items:
+- apiVersion: opensearch.org/v1
+  kind: OpenSearchCluster
+  metadata:
+    annotations:
+      argocd.argoproj.io/sync-wave: "10"
+      argocd.argoproj.io/tracking-id: azul-infra:opensearch.org/OpenSearchCluster:azul-infra/azul-opensearch
+    creationTimestamp: "2026-05-24T13:04:41Z"
+    finalizers:
+    - opensearch.org/migration
+    - Opensearch
+    generation: 3
+    name: azul-opensearch
+    namespace: azul-infra
+    resourceVersion: "71850"
+    uid: e433806f-6cf6-4ed6-8cff-4b9c3237311f
+  spec:
+    bootstrap:
+      diskSize: "0"
+      resources: {}
+    confMgmt:
+      smartScaler: false
+    dashboards:
+      additionalConfig:
+        opensearch_security.multitenancy.enabled: "true"
+        opensearch_security.multitenancy.tenants.preferred: '["Private", "Global"]'
+        opensearch_security.readonly_mode.roles: '["kibana_read_only"]'
+      enable: true
+      opensearchCredentialsSecret:
+        name: azul-cluster-dashboardcredentials
+      replicas: 1
+      resources:
+        limits:
+          cpu: 200m
+          memory: 768Mi
+        requests:
+          cpu: 200m
+          memory: 768Mi
+      service:
+        type: ClusterIP
+      tls:
+        caSecret:
+          name: ""
+        duration: 8760h0m0s
+        enable: false
+        generate: false
+        secret:
+          name: ""
+      version: 3.2.0
+    general:
+      additionalVolumes:
+      - configMap:
+          name: azul-opensearch-certs
+        name: additional-certs
+        path: /usr/share/opensearch/config/certs
+        restartPods: true
+      httpPort: 9200
+      monitoring: {}
+      serviceName: azul-opensearch
+      setVMMaxMapCount: true
+      version: 3.2.0
+    initHelper:
+      resources: {}
+    nodePools:
+    - component: nodes
+      diskSize: 10Gi
+      env:
+      - name: cluster.initial_master_nodes
+        value: azul-opensearch-nodes-0
+      - name: discovery.seed_hosts
+        value: azul-opensearch-nodes-0
+      probes:
+        readiness:
+          command:
+          - /bin/bash
+          - -c
+          - curl -k --silent https://localhost:9200 >/dev/null
+        startup:
+          command:
+          - /bin/bash
+          - -c
+          - curl -k --silent https://localhost:9200 >/dev/null
+      replicas: 1
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 1536Mi
+        requests:
+          cpu: 500m
+          memory: 1Gi
+      roles:
+      - cluster_manager
+      - data
+    security:
+      config:
+        adminCredentialsSecret:
+          name: azul-cluster-admincredentials
+        adminSecret:
+          name: azul-opensearch-admin-certs
+        securityConfigSecret:
+          name: azul-opensearch-securityconfig
+        updateJob:
+          resources: {}
+      tls:
+        http:
+          adminDn:
+          - CN=OpenSearch_Admin.azul-infra.svc.cluster.local
+          caSecret:
+            name: ""
+          duration: 8760h0m0s
+          generate: false
+          rotateDaysBeforeExpiry: -1
+          secret:
+            name: azul-opensearch-certs
+        transport:
+          adminDn:
+          - CN=OpenSearch_Admin.azul-infra.svc.cluster.local
+          caSecret:
+            name: ""
+          duration: 8760h0m0s
+          generate: false
+          nodesDn:
+          - CN=Opensearch_Node.azul-infra.svc.cluster.local
+          perNode: false
+          rotateDaysBeforeExpiry: -1
+          secret:
+            name: azul-opensearch-certs
+  status:
+    availableNodes: 1
+    componentsStatus:
+    - component: RollingRestart
+      status: InProgress
+    contextsecretcreated: true
+    health: yellow
+    initialized: true
+    phase: RUNNING
+    version: 3.2.0
+kind: List
+metadata:
+  resourceVersion: ""
