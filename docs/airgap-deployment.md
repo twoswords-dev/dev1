@@ -1,6 +1,6 @@
 # Azul airgap deployment profile
 
-This branch contains an airgap profile for a larger k3s cluster using `*.interal.au` DNS and a private registry named `registry-1.docker.io`.
+This branch contains an airgap profile for a larger k3s cluster using `*.internal.au` DNS and a private registry named `registry-1.docker.io`.
 
 ## Included bundle items
 
@@ -15,7 +15,7 @@ This branch contains an airgap profile for a larger k3s cluster using `*.interal
 
 - OpenSearch: 3 data/cluster-manager nodes, 2Ti each, 12Gi/4 CPU requested per node.
 - Kafka: 3 brokers/controllers, 1Ti each, replication factor 3, min ISR 2.
-- MinIO: 4 replicas, 5Ti requested storage.
+- MinIO: 3 replicas, 5Ti requested storage.
 - Keycloak: 2 replicas; Postgres PVC 100Gi.
 - Azul app: HA web/restapi/metastore/dispatcher settings with HPA ranges raised.
 
@@ -38,11 +38,11 @@ Otherwise load/push from inside the airgapped environment after logging in to `r
 
 1. Ensure k3s has an ingress controller, Longhorn/storage class `longhorn`, cert-manager CRDs/controller, and Argo CD installed.
 2. Ensure DNS resolves:
-   - `azul.interal.au`
-   - `keycloak.interal.au`
-   - `opensearch-dashboards.interal.au`
-   - `minio.interal.au`
-   - `minio-api.interal.au`
+   - `azul.internal.au`
+   - `keycloak.internal.au`
+   - `opensearch-dashboards.internal.au`
+   - `minio.internal.au`
+   - `minio-api.internal.au`
 3. Create namespaces and secrets:
 
 ```bash
@@ -52,32 +52,36 @@ kubectl apply -f infra/creds.yaml
 kubectl apply -f azul/creds.yaml
 ```
 
-4. Create/update the external Azul web TLS secret with a certificate covering `azul.interal.au`:
+4. Create/update the external Azul web TLS secret with a certificate covering `azul.internal.au`:
 
 ```bash
-AZUL_HOSTNAME=azul.interal.au \
+AZUL_HOSTNAME=azul.internal.au \
 TLS_CERT_FILE=/path/to/fullchain.crt \
 TLS_KEY_FILE=/path/to/tls.key \
 scripts/create-azul-external-web-tls.sh
 ```
 
-5. Deploy with Argo CD:
+5. Deploy infra with Argo CD, then wait at least for Keycloak. Do not wait for full infra health before Keycloak setup: OpenSearch Dashboards may remain pending until `opensearch-dashboards-oidc` exists.
 
 ```bash
 kubectl apply -f argocd/azul-infra-airgap-application.yaml
-kubectl -n argocd get applications.argoproj.io azul-infra-airgap -w
-kubectl apply -f argocd/azul-airgap-application.yaml
-kubectl -n argocd get applications.argoproj.io azul-airgap -w
+kubectl -n azul-infra wait --for=condition=Ready pod -l app=keycloak --timeout=300s
 ```
 
-6. Configure Keycloak and OpenSearch security after pods are ready. The Keycloak script also creates/updates `azul-infra/opensearch-dashboards-oidc`, which OpenSearch Dashboards uses for its OIDC client secret:
+6. Configure Keycloak. The Keycloak script also creates/updates `azul-infra/opensearch-dashboards-oidc`, which OpenSearch Dashboards uses for its OIDC client secret:
 
 ```bash
-KEYCLOAK_URL=https://keycloak.interal.au \
-AZUL_URL=https://azul.interal.au \
-OPENSEARCH_DASHBOARDS_URL=https://opensearch-dashboards.interal.au \
+KEYCLOAK_URL=https://keycloak.internal.au \
+AZUL_URL=https://azul.internal.au \
+OPENSEARCH_DASHBOARDS_URL=https://opensearch-dashboards.internal.au \
 infra/scripts/configure-keycloak-azul.sh
+```
 
+7. Deploy Azul, then configure OpenSearch security after OpenSearch, Keycloak, and the Azul restapi are ready:
+
+```bash
+kubectl apply -f argocd/azul-airgap-application.yaml
+kubectl -n argocd get applications.argoproj.io azul-airgap -w
 infra/scripts/configure-opensearch-security-azul.sh
 ```
 

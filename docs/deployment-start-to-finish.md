@@ -98,15 +98,15 @@ scripts/create-azul-external-web-tls.sh
 
 ## 5. Deploy with Argo CD
 
-Apply infra first:
+Apply infra first, then wait at least for Keycloak to be ready. Do not wait for full infra health before Keycloak setup: OpenSearch Dashboards may remain pending until the `opensearch-dashboards-oidc` secret is created by the Keycloak setup script.
 
 ```bash
 kubectl apply -f argocd/azul-infra-application.yaml
-kubectl -n argocd get applications.argoproj.io azul-infra -w
+kubectl -n azul-infra wait --for=condition=Ready pod -l app=keycloak --timeout=300s
 kubectl -n azul-infra get pods
 ```
 
-Then apply Azul:
+Then run the Keycloak setup in step 6, then apply Azul:
 
 ```bash
 kubectl apply -f argocd/azul-application.yaml
@@ -170,7 +170,7 @@ kubectl apply -f infra/creds.yaml
 kubectl apply -f azul/creds.yaml
 AZUL_HOSTNAME=azul.local INGRESS_IP=192.168.10.111 scripts/create-azul-external-web-tls.sh
 kubectl apply -f argocd/azul-infra-application.yaml
-kubectl -n argocd get applications.argoproj.io azul-infra -w
+kubectl -n azul-infra wait --for=condition=Ready pod -l app=keycloak --timeout=300s
 KEYCLOAK_URL=https://keycloak.local AZUL_URL=https://azul.local OPENSEARCH_DASHBOARDS_URL=https://opensearch-dashboards.local infra/scripts/configure-keycloak-azul.sh
 kubectl apply -f argocd/azul-application.yaml
 kubectl -n argocd get applications.argoproj.io azul -w

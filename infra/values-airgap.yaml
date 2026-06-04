@@ -1,4 +1,4 @@
-# Airgapped production profile for a 10-node k3s cluster (*.interal.au).
+# Airgapped production profile for a 10-node k3s cluster (*.internal.au).
 imagePullSecrets:
 - name: airgap-registry
 tolerations: []
@@ -70,7 +70,7 @@ minio:
     enable: true
     image: registry-1.docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     secretName: s3-keys
-    replicas: 4
+    replicas: 3
     resources:
       requests:
         memory: 4Gi
@@ -89,10 +89,10 @@ minio:
     ingress:
       api:
         enable: true
-        host: minio-api.interal.au
+        host: minio-api.internal.au
       console:
         enable: true
-        host: minio.interal.au
+        host: minio.internal.au
       ingressClassName: nginx
       secretName: minio-tls
       annotations:
@@ -186,7 +186,7 @@ opensearch:
     ingress:
       enable: true
       ingressClassName: nginx
-      host: opensearch-dashboards.interal.au
+      host: opensearch-dashboards.internal.au
       secretName: dashboard-ingress-tls
       annotations:
         cert-manager.io/issuer: azul-infra-ca
@@ -220,7 +220,7 @@ opensearch:
       opensearch_security.openid.connect_url: https://keycloak.azul-infra.svc.cluster.local/realms/azul/.well-known/openid-configuration
       opensearch_security.openid.client_id: opensearch-dashboards
       opensearch_security.openid.client_secret: ${OPENSEARCH_DASHBOARDS_CLIENT_SECRET}
-      opensearch_security.openid.base_redirect_url: https://opensearch-dashboards.interal.au
+      opensearch_security.openid.base_redirect_url: https://opensearch-dashboards.internal.au
       opensearch_security.openid.root_ca: /usr/share/opensearch-dashboards/config/certs/ca-certificates
     resources:
       requests:
@@ -738,7 +738,7 @@ keycloak:
       memory: 4Gi
       cpu: 2000m
   proxyHeaderArg: xforwarded
-  hostnameArg: https://keycloak.interal.au
+  hostnameArg: https://keycloak.internal.au
   extraArgs:
   - --hostname-backchannel-dynamic=true
   tls:
@@ -750,7 +750,7 @@ keycloak:
     duration: 87600h0m0s
     renewBefore: 8760h0m0s
   ingress:
-    hostname: keycloak.interal.au
+    hostname: keycloak.internal.au
     secretName: keycloak-tls
     annotations:
       cert-manager.io/issuer: azul-infra-ca
