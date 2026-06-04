@@ -37,9 +37,9 @@ save_workload_replicas() {
 
 backup_custom_resources() {
   local ns="$1"
-  kubectl -n "$ns" get kafkanodepool.kafka.strimzi.io -o yaml > "${STATE_DIR}/kafkanodepools-${ns}.yaml" 2>/dev/null || true
-  kubectl -n "$ns" get opensearchcluster.opensearch.org -o yaml > "${STATE_DIR}/opensearchclusters-org-${ns}.yaml" 2>/dev/null || true
-  kubectl -n "$ns" get opensearchcluster.opensearch.opster.io -o yaml > "${STATE_DIR}/opensearchclusters-opster-${ns}.yaml" 2>/dev/null || true
+  kubectl -n "$ns" get kafkanodepool.kafka.strimzi.io -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.replicas}{"\n"}{end}' > "${STATE_DIR}/kafkanodepools-${ns}.tsv" 2>/dev/null || true
+  kubectl -n "$ns" get opensearchcluster.opensearch.org -o json | python3 -c 'import json,sys; o=json.load(sys.stdin); [print(i["metadata"]["name"], p.get("component", n), p.get("replicas", 0), sep="\t") for i in o.get("items", []) for n,p in enumerate(i.get("spec",{}).get("nodePools", []))]' > "${STATE_DIR}/opensearchclusters-org-${ns}.tsv" 2>/dev/null || true
+  kubectl -n "$ns" get opensearchcluster.opensearch.opster.io -o json | python3 -c 'import json,sys; o=json.load(sys.stdin); [print(i["metadata"]["name"], p.get("component", n), p.get("replicas", 0), sep="\t") for i in o.get("items", []) for n,p in enumerate(i.get("spec",{}).get("nodePools", []))]' > "${STATE_DIR}/opensearchclusters-opster-${ns}.tsv" 2>/dev/null || true
 }
 
 patch_kafkanodepools() {
@@ -128,9 +128,23 @@ turn_on() {
   done < "$REPLICAS_FILE"
 
   # Restore operator-managed CR replica counts saved by 'off'.
-  [[ -f "${STATE_DIR}/kafkanodepools-${INFRA_NS}.yaml" ]] && kubectl -n "$INFRA_NS" apply -f "${STATE_DIR}/kafkanodepools-${INFRA_NS}.yaml" >/dev/null 2>&1 || true
-  [[ -f "${STATE_DIR}/opensearchclusters-org-${INFRA_NS}.yaml" ]] && kubectl -n "$INFRA_NS" apply -f "${STATE_DIR}/opensearchclusters-org-${INFRA_NS}.yaml" >/dev/null 2>&1 || true
-  [[ -f "${STATE_DIR}/opensearchclusters-opster-${INFRA_NS}.yaml" ]] && kubectl -n "$INFRA_NS" apply -f "${STATE_DIR}/opensearchclusters-opster-${INFRA_NS}.yaml" >/dev/null 2>&1 || true
+  if [[ -f "${STATE_DIR}/kafkanodepools-${INFRA_NS}.tsv" ]]; then
+    while IFS=$'\t' read -r name replicas; do
+      [[ -n "${name:-}" && -n "${replicas:-}" ]] || continue
+      kubectl -n "$INFRA_NS" patch "kafkanodepool.kafka.strimzi.io/$name" --type=merge -p "{\"spec\":{\"replicas\":${replicas}}}" >/dev/null 2>&1 || true
+    done < "${STATE_DIR}/kafkanodepools-${INFRA_NS}.tsv"
+  fi
+  for tuple in "opensearchcluster.opensearch.org:${STATE_DIR}/opensearchclusters-org-${INFRA_NS}.tsv" "opensearchcluster.opensearch.opster.io:${STATE_DIR}/opensearchclusters-opster-${INFRA_NS}.tsv"; do
+    resource="${tuple%%:*}"
+    file="${tuple#*:}"
+    [[ -f "$file" ]] || continue
+    while IFS=$'\t' read -r name component replicas; do
+      [[ -n "${name:-}" && -n "${component:-}" && -n "${replicas:-}" ]] || continue
+      idx="$(kubectl -n "$INFRA_NS" get "$resource/$name" -o json 2>/dev/null | python3 -c 'import json,sys; o=json.load(sys.stdin); c=sys.argv[1]; print(next((i for i,p in enumerate(o.get("spec",{}).get("nodePools",[])) if str(p.get("component", i))==c), ""))' "$component")"
+      [[ -n "$idx" ]] || continue
+      kubectl -n "$INFRA_NS" patch "$resource/$name" --type=json -p "[{\"op\":\"replace\",\"path\":\"/spec/nodePools/${idx}/replicas\",\"value\":${replicas}}]" >/dev/null 2>&1 || true
+    done < "$file"
+  done
   [[ -f "${STATE_DIR}/hpa-${INFRA_NS}.yaml" ]] && kubectl -n "$INFRA_NS" apply -f "${STATE_DIR}/hpa-${INFRA_NS}.yaml" >/dev/null 2>&1 || true
 
   echo "Turning Azul app back on: ${APP_NS}"

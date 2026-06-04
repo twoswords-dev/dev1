@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: azul-airgap
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: http://192.168.10.150:3002/twoswords/azul-app.git
+    targetRevision: airgap
+    path: azul
+    helm:
+      valueFiles:
+        - values-airgap.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: azul-app
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true

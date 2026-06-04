@@ -250,12 +250,7 @@ spec:
       {{- toYaml . | nindent 8 }}
     {{- end }}
     resources:
-      requests:
-         memory: "768Mi"
-         cpu: "200m"
-      limits:
-         memory: "768Mi"
-         cpu: "200m"
+{{ .Values.opensearch.dashboard.resources | toYaml | nindent 6 }}
     tls:
       enable: false
       generate: false

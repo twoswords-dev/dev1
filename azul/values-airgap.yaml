@@ -1,0 +1,1314 @@
+# Airgapped production profile for a 10-node k3s cluster (*.interal.au).
+namespace:
+  create: true
+  secure: false
+  labels: {}
+imagePullSecrets:
+- name: airgap-registry
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+pipconfig: null
+storageClassName: longhorn
+CACertificateConfigMap: azul-ca-bundle
+networkPolicy: false
+istioEnabled: false
+disableNetworkPolicies: []
+customNetworkPolicies: []
+limitRange:
+  enabled: true
+  spec:
+    limits:
+    - defaultRequest:
+        cpu: 25m
+        memory: 96Mi
+      default:
+        cpu: 300m
+        memory: 512Mi
+      type: Container
+coreHPA:
+  averageUtilization: 70
+  maxReplicas: 8
+  minReplicas: 2
+pluginHPA:
+  maxReplicas: 10
+  minReplicas: 1
+  averageUtilization: 70
+  useSmartScaler: false
+  includeHistoric: false
+  maxQueueLength: 200
+pluginSyncHPA:
+  maxReplicas: 6
+  minReplicas: 1
+  averageUtilization: 70
+  useSmartScaler: false
+  includeHistoric: false
+  maxQueueLength: 200
+createExampleSecrets: false
+secrets:
+  filestore: s3-keys
+  redis: redis
+  metastoreCreds: metastore-creds
+  assemblylineReceiver: assemblyline-receiver
+  virustotalCreds: virustotal-creds
+  backupS3Keys: s3-backup-keys
+  azulStats: azul-stats
+  azulReportFeeds: azul-report-feeds
+external:
+  opensearch:
+    endpoint: https://azul-opensearch.azul-infra.svc.cluster.local:9200
+    username: admin
+    partition: homelab01
+    versionSuffix: '0'
+  filestore:
+    backend: s3
+    endpoint: s3-store-minio.azul-infra.svc.cluster.local:9000
+    location: azul
+    secure: false
+    region: ''
+    xorEncoding: false
+  kafka:
+    endpoint: azul-kafka-kafka-bootstrap.azul-infra.svc.cluster.local:9092
+    topicPrefix: homelab01
+    consumerGroupRetentionDays: 30
+    topicDefaultReplicas: 3
+    topicDefaultPartitions: 6
+    topics: []
+  redis:
+    endpoint: azul-redis-master:6379
+    db: 15
+    cleanup_delay: 30
+    cleanup_running_delay: 7
+    ttl: '30'
+    exception_wait: 60
+    ingress:
+      enabled: false
+      hosts: []
+      ingressClassName: default
+      secretName: redis-tls
+      annotations: {}
+      security:
+        enableHarden: true
+        csp: {}
+  loki:
+    endpoint: ''
+  services: {}
+redis:
+  enabled: true
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  pvcSize: 100Gi
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+  persistentVolumeClaimRetentionPolicy:
+    enabled: true
+    whenScaled: Retain
+    whenDeleted: Retain
+monitoring:
+  enabled: false
+  alerting: false
+  alertWebhookTitleKey: title
+  alertWebhookMessageKey: message
+auditForwarder:
+  enabled: false
+  send_logs_to: LOG_ONLY
+  proxy: ''
+  headers:
+    system: Azul
+  sendInterval: 30
+  client_timeout: 30.0
+apiServices:
+  smartStringFilter:
+    enabled: false
+    replicas: 1
+    logLevel: WARN
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 512Mi
+stats:
+  enabled: false
+  config:
+    maxScrapeTime: '60'
+    logLevel: WARN
+    opensearch:
+      enabled: true
+      scrapeStatsEnabled: true
+      scrapeIndexPattern: azul*
+      testAlias: azul.test.alias
+      testIndex: azul.test.index
+      testIndexPattern: azul.test.*
+      verifyCerts: 'true'
+    kafka: true
+    kafkaTestTopic: test-kafka-up-topic
+    redis: true
+    auth: true
+    authOauthMethod: client_secret_basic
+    authExpectedRoles:
+    - azul_read
+    filestore: true
+    testBlob: test-blob
+    backupFilestore: true
+    backupTestBlob: backup-test-blob
+    azulProbe:
+      enabled: true
+      timeoutSeconds: 5
+      restapiPath: /api
+      docsPath: /docs/
+      webuiPath: /ui/
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 500m
+burrow:
+  enabled: false
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512M
+    requests:
+      cpu: 100m
+      memory: 256M
+scaler:
+  enabled: false
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256M
+    requests:
+      cpu: 100m
+      memory: 128M
+recovery:
+  mode: 'off'
+  restoreType: all
+  s3AuthMode: keys
+  externalS3Endpoint: ''
+  externalS3Secure: 'true'
+  enableAutomaticAgeoff: false
+  enableAutomaticAgeoffCleanup: true
+  label: '01'
+  nextBackupLabel: ''
+  bucketNamePrefix: azul-backup-
+  bucketRegion: ''
+  logLevel: INFO
+  backup:
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 100m
+      limits:
+        memory: 1Gi
+        cpu: 500m
+  restore:
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 100m
+      limits:
+        memory: 1Gi
+        cpu: 500m
+docs:
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+global:
+  defaultCsp:
+    default-src: '''none'''
+    base-uri: '''self'''
+    form-action: '''self'''
+    frame-src: '''none'''
+    frame-ancestors: '''none'''
+    font-src: '''self'' data:'
+    script-src: '''self'''
+    script-src-attr: '''self'''
+    style-src: '''self'''
+    img-src: '''self'''
+    connect-src: '''self'''
+    worker-src: '''none'''
+    object-src: '''none'''
+    media-src: '''none'''
+  headers:
+    X-Frame-Options: deny
+    X-Content-Type-Options: nosniff
+    X-Permitted-Cross-Domain-Policies: none
+    Cross-Origin-Resource-Policy: same-origin
+    Cross-Origin-Embedder-Policy: require-corp
+    Cross-Origin-Opener-Policy: unsafe-none
+    X-XSS-Protection: '0'
+web:
+  ingress:
+    enabled: true
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: 4096m
+    hosts:
+    - azul.interal.au
+    ingressClassName: nginx
+    secretName: azul-external-web-tls
+    security:
+      enableHarden: true
+      csp:
+        webui:
+          connect-src: '''self'' https:'
+          worker-src: '''self'' blob:'
+          manifest-src: '''self'''
+          object-src: 'blob:'
+          frame-src: 'blob:'
+          img-src: '''self'' blob:'
+          script-src: '''self'' ''unsafe-inline'''
+          script-src-attr: '''unsafe-inline'''
+          style-src: '''self'' ''unsafe-inline'''
+        api:
+          connect-src: '''self'' https:'
+          script-src: '''self'' ''unsafe-inline'''
+        docs:
+          worker-src: '''self'''
+          img-src: '''self'' data:'
+          script-src: '''self'' ''unsafe-inline'' ''unsafe-eval'''
+          style-src: '''self'' ''unsafe-inline'''
+  config:
+    deployment_title: Azul
+    deployment_alticon: false
+    deployment_back_colour: '#0f0f0f'
+    deployment_colour: '#ffffff'
+    deployment_text: ''
+    motd_body: This is the default message for the base azul kustomize application.
+    motd_footer: Close
+    motd_header: Important Notice
+    motd_hours: 24
+    unauthorized_help: Please contact your system administrator for assistance.
+    binary_external_links: []
+  replicas: 3
+  pdb:
+    enabled: false
+    minAvailable: 1
+dispatcher:
+  ingress:
+    enabled: false
+    hosts: []
+    ingressClassName: default
+    secretName: dispatcher-tls
+    annotations: {}
+    security:
+      enableHarden: true
+      csp: {}
+  sessionAffinity: ClientIP
+  config:
+    defaultLogLevel: INFO
+    metastore:
+      events:
+        replicas: 3
+        pdb:
+          enabled: false
+          minAvailable: 1
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 500m
+          limits:
+            memory: 2Gi
+            cpu: 2000m
+        env:
+          DP.EVENTS.DEDUPE_CACHE_BYTES: 10Mi
+      streams:
+        replicas: 3
+        pdb:
+          enabled: false
+          minAvailable: 1
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 500m
+          limits:
+            memory: 2Gi
+            cpu: 2000m
+        env:
+          DP.STREAMS.API_ALLOW_DELETE: 'true'
+          DP.STREAMS.CACHE.SIZE_BYTES: 32Mi
+          DP.STREAMS.CACHE.SHARDS: 8
+    plugin:
+      events:
+        replicas: 3
+        pdb:
+          enabled: false
+          minAvailable: 1
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 500m
+          limits:
+            memory: 2Gi
+            cpu: 2000m
+        env:
+          DP.EVENTS.DEDUPE_CACHE_BYTES: 10Mi
+          DP.EVENTS.REPLAY_PLUGIN_CACHE.SIZE_BYTES: 10Mi
+          DP.EVENTS.REPLAY_PLUGIN_CACHE.MIN_RUNTIME_SECONDS: '10'
+      streams:
+        replicas: 3
+        pdb:
+          enabled: false
+          minAvailable: 1
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 500m
+          limits:
+            memory: 2Gi
+            cpu: 2000m
+        env:
+          DP.STREAMS.CACHE.SIZE_BYTES: 32Mi
+          DP.STREAMS.CACHE.SHARDS: 8
+          DP.STREAMS.API_ALLOW_DELETE: 'false'
+lostTasks:
+  args:
+  - lost-tasks
+  replicas: 2
+  env: {}
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+migration:
+  kafka:
+    enabled: false
+    previousTopicPrefix: default00
+    legacyJson: false
+    MaxNumberOfEmptyPolls: 180
+    logLevel: INFO
+    config:
+      args:
+      - reprocess
+      replicas: 1
+      resources:
+        requests:
+          memory: 1Gi
+          cpu: 100m
+        limits:
+          memory: 2Gi
+          cpu: 500m
+metastore:
+  disable_entropy_similarity: false
+  status_index:
+    number_of_shards: 1
+    number_of_replicas: 0
+  plugin_index:
+    number_of_shards: 1
+    number_of_replicas: 0
+  env: {}
+  instances:
+    ageoff:
+      error_log: true
+      logLevel: WARN
+      minReplicas: 2
+      maxReplicas: 6
+      command:
+      - azul-metastore
+      - age-off
+      resources:
+        requests:
+          memory: 1Gi
+          cpu: 500m
+        limits:
+          memory: 2Gi
+          cpu: 2000m
+    ingest-binary:
+      error_log: true
+      logLevel: WARN
+      minReplicas: 2
+      maxReplicas: 6
+      command:
+      - azul-metastore
+      - ingest-binary
+      resources:
+        requests:
+          memory: 1Gi
+          cpu: 500m
+        limits:
+          memory: 2Gi
+          cpu: 2000m
+    ingest-plugin:
+      error_log: true
+      logLevel: WARN
+      minReplicas: 2
+      maxReplicas: 6
+      command:
+      - azul-metastore
+      - ingest-plugin
+      resources:
+        requests:
+          memory: 1Gi
+          cpu: 500m
+        limits:
+          memory: 2Gi
+          cpu: 2000m
+    ingest-status:
+      error_log: true
+      logLevel: WARN
+      minReplicas: 2
+      maxReplicas: 6
+      command:
+      - azul-metastore
+      - ingest-status
+      resources:
+        requests:
+          memory: 1Gi
+          cpu: 500m
+        limits:
+          memory: 2Gi
+          cpu: 2000m
+restapi:
+  minReplicas: 3
+  maxReplicas: 8
+  pdb:
+    enabled: false
+    minAvailable: 1
+  resources:
+    requests:
+      memory: 2Gi
+      cpu: 1000m
+    limits:
+      memory: 4Gi
+      cpu: 4000m
+  logPvcSize: 100Gi
+  purgePvcSize: 100Gi
+  cors:
+    allowOrigins: '[]'
+    allowCredentials: 'false'
+    allowMethods: '[]'
+    allowHeaders: '[]'
+  oidc:
+    rolesKey: roles
+    usernameKey: preferred_username
+    cacheTTL: '600'
+    swaggerRedirectUrl: /api/oauth2-redirect
+    authority_url: https://keycloak.azul-infra.svc.cluster.local/realms/azul
+  config:
+    ca_bundle: /cafile/ca.crt
+    host: 0.0.0.0
+    port: '8000'
+    processWorkers: 4
+    asyncioWorkers: 4
+    logLevel: INFO
+  env: {}
+security:
+  admin_roles:
+  - admin
+  oidc:
+    enabled: true
+    authority_url: https://keycloak.interal.au/realms/azul
+    client_id: azul-web
+    scopes: openid profile offline_access roles azul
+    enable_pat: false
+    security_index_username: admin
+    security_index: security_azul
+  labels:
+    classification:
+      title: Classification
+      options:
+      - name: OFFICIAL
+        priority: '0'
+      - name: SAUAGES
+        priority: '10'
+      - name: TOP SAUSAGE
+        priority: '20'
+    caveat:
+      title: Caveat
+      options: []
+    releasability:
+      title: Releasability
+      prefix: 'REL:'
+      origin: ''
+      origin_alt_name: ''
+      options: []
+    tlp:
+      title: TLP
+      options:
+      - name: TLP:CLEAR
+      - name: TLP:GREEN
+      - name: TLP:AMBER
+      - name: TLP:AMBER+STRICT
+        enforce_security: true
+  allow_releasability_priority_gte: '0'
+  minimumRequiredAccess:
+  - OFFICIAL
+  default: OFFICIAL TLP:CLEAR
+  presets:
+  - OFFICIAL TLP:AMBER+STRICT
+  - OFFICIAL TLP:AMBER
+  - OFFICIAL TLP:GREEN
+  - OFFICIAL TLP:CLEAR
+sources:
+  testing:
+    partition_unit: all
+    expire_events_after: 7 days
+    description: Files submitted during testing of Azul
+    exclude_from_backup: true
+    elastic:
+      number_of_replicas: 2
+      number_of_shards: 6
+    icon_class: trash-alt
+    references:
+    - description: Local submitter or point of contact for samples
+      name: user
+      required: true
+      highlight: true
+    kafka:
+      config:
+        segment.bytes: '1073741824'
+      numpartitions: 6
+      replicationfactor: 3
+pluginConfig:
+  RUNNER_LOG_LEVEL: info
+  ENABLE_MEM_LIMITS: 'true'
+  PLUGIN_DEPTH_LIMIT: '10'
+pluginsEnabled: false
+plugins:
+  assemblyline:
+    type: standard
+    enabled: false
+    config:
+      SECURITY_MAP:
+        OFFICIAL:
+        - OFFICIAL
+      azul_instance: azul
+    plugins:
+      assemblyline-receiver:
+        enabled: true
+        image: plugin-assemblyline
+        useSmartScaler: false
+        additionalLabels:
+          allow-ingress-assemblyline-receiver: 'true'
+          allow-egress-https-http: 'true'
+        promMetricsEnabled: true
+        promPort: '8850'
+        ingress:
+          name: assemblyline
+          serviceName: plugin-assemblyline-receiver
+          servicePort: 8850
+          host: ''
+          secretName: ''
+          annotations: {}
+          security:
+            enableHarden: true
+            csp: {}
+        envFrom:
+        - configMapRef:
+            name: metastore
+        env:
+        - name: al_url
+          valueFrom:
+            configMapKeyRef:
+              name: endpoints
+              key: assemblyline
+        - name: al_user
+          valueFrom:
+            secretKeyRef:
+              name: '{{ .Values.secrets.assemblylineReceiver }}'
+              key: al_user
+        - name: al_token
+          valueFrom:
+            secretKeyRef:
+              name: '{{ .Values.secrets.assemblylineReceiver }}'
+              key: al_token
+      assemblyline-forwarder:
+        enabled: true
+        image: plugin-assemblyline
+        command:
+        - azul-plugin-assemblyline-forwarder
+        useSmartScaler: false
+        additionalLabels:
+          allow-egress-https-http: 'true'
+        envFrom:
+        - configMapRef:
+            name: metastore
+        env:
+        - name: al_url
+          valueFrom:
+            configMapKeyRef:
+              name: endpoints
+              key: assemblyline
+        - name: al_user
+          valueFrom:
+            secretKeyRef:
+              name: '{{ .Values.secrets.assemblylineReceiver }}'
+              key: al_user
+        - name: al_token
+          valueFrom:
+            secretKeyRef:
+              name: '{{ .Values.secrets.assemblylineReceiver }}'
+              key: al_token
+  dynamic:
+    type: standard
+    enabled: false
+    plugins:
+      cape:
+        enabled: false
+        additionalLabels:
+          allow-egress-anything: 'true'
+        baseEnv:
+        - name: PLUGIN_CAPE_SERVER
+          value: ''
+        - name: PLUGIN_CAPE_AUTH_TOKEN
+          value: ''
+        - name: PLUGIN_START_TIMEOUT
+          value: '600'
+        - name: PLUGIN_RUN_TIMEOUT
+          value: '900'
+        - name: PLUGIN_FILTER_MAX_CONTENT_SIZE
+          value: 16MiB
+        - name: PLUGIN_REQUEST_TIMEOUT
+          value: '30'
+        - name: PLUGIN_POLL_INTERVAL
+          value: '15'
+        - name: PLUGIN_API_RETRY_COUNT
+          value: '3'
+  maco:
+    type: maco
+    image: plugin-maco
+    enabled: false
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 500m
+      limits:
+        memory: 2Gi
+        cpu: 1500m
+    config:
+      PLUGIN_FILTER_MAX_CONTENT_SIZE: 1GiB
+      PLUGIN_ENABLE_MEM_LIMITS: 'false'
+    sources: {}
+  nsrl:
+    type: standard
+    enabled: false
+    pvc:
+      size: 20Gi
+    server:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 1
+      averageUtilization: 500
+      resources:
+        requests:
+          cpu: 500m
+          memory: 500Mi
+        limits:
+          cpu: 500m
+          memory: 500Mi
+      ingress:
+        name: plugin-nsrl-lookup
+        serviceName: plugin-nsrl-lookup
+        servicePort: 8853
+        host: ''
+        secretName: ''
+        annotations: {}
+        security:
+          enableHarden: true
+          csp: {}
+    config:
+      NSRL_LOOKUP_ENDPOINT: http://plugin-nsrl-lookup:8853
+      RDS_RELEASE_VERSION: 2024.03.1
+      BASE_PATH: /data/nsrl/db/
+      DOWNLOAD_URL: https://s3.amazonaws.com/rds.nsrl.nist.gov/RDS
+    plugins:
+      nsrl:
+        additionalLabels:
+          allow-egress-nsrl-lookup-server: 'true'
+        args:
+        - --config
+        - uri
+        - $(NSRL_LOOKUP_ENDPOINT)
+        - --config
+        - details
+        - 'false'
+  office:
+    type: standard
+    enabled: false
+    plugins:
+      office-dde:
+        image: plugin-office
+        command:
+        - azul-plugin-dde
+      office-decrypt:
+        image: plugin-office
+        command:
+        - azul-plugin-officedecrypt
+      office-macros:
+        image: plugin-office
+        command:
+        - azul-plugin-macros
+      office-mimeinfo:
+        image: plugin-office
+        command:
+        - azul-plugin-mimeinfo
+      office-oleinfo:
+        image: plugin-office
+        command:
+        - azul-plugin-oleinfo
+      office-openxmlinfo:
+        image: plugin-office
+        command:
+        - azul-plugin-openxmlinfo
+      office-rtfinfo:
+        image: plugin-office
+        command:
+        - azul-plugin-rtfinfo
+      office-sylk:
+        image: plugin-office
+        command:
+        - azul-plugin-sylk
+  report-feeds:
+    type: reportFeeds
+    enabled: false
+    prometheusPushGateway: http://prometheus-pushgateway.monitoring.svc.cluster.local:9091
+    pvc:
+      size: 1Gi
+    env:
+    - name: PLUGIN_NAMESPACE_SUFFIX
+      value: ''
+    demoConfig: false
+  retrohunt:
+    type: standard
+    enabled: false
+    schedule: 0 2 * * *
+    pvc:
+      size: 20Gi
+    config:
+      PLUGIN_ENABLE_MEM_LIMITS: 'false'
+      PLUGIN_ROOT_PATH: /indices
+      PLUGIN_INDEXERS:
+        content:
+          name: content
+          stream_labels:
+          - content
+          max_bytes_before_indexing: 10GiB
+          periodic_index_frequency_min: '60'
+          timeout_minutes: '60'
+          allow_splitting_and_deletion: 'true'
+    plugins:
+      retrohunt-server:
+        envFrom:
+        - configMapRef:
+            name: retrohunt
+        baseEnv:
+        - name: REDIS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: '{{ .Values.secrets.redis }}'
+              key: redis-username
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: '{{ .Values.secrets.redis }}'
+              key: redis-password
+        ingress:
+          name: plugin-retrohunt-server
+          serviceName: plugin-retrohunt-server
+          servicePort: 8852
+          host: ''
+          secretName: ''
+          annotations: {}
+          security:
+            enableHarden: true
+            csp:
+              script-src: '''self'' ''unsafe-inline'''
+        image: plugin-retrohunt
+        minReplicas: 1
+        maxReplicas: 1
+        averageUtilization: 300
+        useSmartScaler: false
+        resources:
+          requests:
+            cpu: 500m
+            memory: 500Mi
+          limits:
+            cpu: 1500m
+            memory: 2Gi
+        additionalLabels:
+          allow-ingress-retrohunt-server: 'true'
+          allow-egress-redis: 'true'
+        promMetricsEnabled: true
+        promPort: '8852'
+        args:
+        - --events-url
+        - $(PLUGIN_EVENTS_URL)
+        - --data-url
+        - $(PLUGIN_DATA_URL)
+        - --host
+        - 0.0.0.0
+        - --port
+        - '8852'
+      retrohunt-worker:
+        additionalLabels:
+          allow-egress-redis: 'true'
+        strategy:
+          type: Recreate
+        promMetricsEnabled: true
+        promPort: '8900'
+        image: plugin-retrohunt
+        runTimeout: '6000'
+        maxFileSize: '100000000'
+        useSmartScaler: false
+        command:
+        - azul-plugin-retroingestor
+        volumeMounts:
+        - name: indices
+          mountPath: /indices
+        volumes:
+        - name: indices
+          persistentVolumeClaim:
+            claimName: plugin-retrohunt
+        envFrom:
+        - configMapRef:
+            name: retrohunt
+        baseEnv:
+        - name: REDIS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: '{{ .Values.secrets.redis }}'
+              key: redis-username
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: '{{ .Values.secrets.redis }}'
+              key: redis-password
+        extraContainers:
+          worker:
+            template: plugin.container.main
+            promMetricsEnabled: true
+            promPort: '8901'
+            envFrom:
+            - configMapRef:
+                name: retrohunt
+            env:
+            - name: PLUGIN_PROMETHEUS_PORT_WORKER
+              value: '8901'
+            - name: REDIS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ .Values.secrets.redis }}'
+                  key: redis-username
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ .Values.secrets.redis }}'
+                  key: redis-password
+            image: plugin-retrohunt
+            resources:
+              requests:
+                memory: 1Gi
+                cpu: 100m
+              limits:
+                memory: 2Gi
+                cpu: 500m
+            command:
+            - azul-plugin-retroworker
+            volumeMounts:
+            - name: indices
+              mountPath: /indices
+          content-indexer:
+            template: plugin.container.main
+            promMetricsEnabled: true
+            promPort: '8902'
+            envFrom:
+            - configMapRef:
+                name: retrohunt
+            env:
+            - name: PLUGIN_PROMETHEUS_PORT_INDEXER
+              value: '8902'
+            - name: REDIS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ .Values.secrets.redis }}'
+                  key: redis-username
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ .Values.secrets.redis }}'
+                  key: redis-password
+            image: plugin-retrohunt
+            resources:
+              requests:
+                memory: 1Gi
+                cpu: 100m
+              limits:
+                memory: 2Gi
+                cpu: 1000m
+            command:
+            - azul-plugin-retroindexer
+            - --indexer-name
+            - content
+            volumeMounts:
+            - name: indices
+              mountPath: /indices
+  tika:
+    type: standard
+    enabled: false
+    plugins:
+      tika:
+        extraContainers:
+          server:
+            template: plugin.container.main
+            image: tika_external
+            resources:
+              limits:
+                memory: 1Gi
+                cpu: 1000m
+        args:
+        - --config
+        - tika_server
+        - http://localhost:9998
+        resources:
+          limits:
+            memory: 1Gi
+            cpu: 1000m
+  virustotal:
+    type: standard
+    enabled: false
+    pvc:
+      size: 10Gi
+    demoConfig: false
+    pullFromApi: false
+    config:
+      VIRUSTOTAL_APIVERSION: v3
+      PLUGIN_PROMETHEUS_PUSH_GATEWAY: ''
+    plugins:
+      vtfilefeedserver:
+        enabled: false
+        additionalLabels:
+          allow-ingress-virustotal-file-feed-server: 'true'
+          allow-egress-prometheus-push-gateway: 'true'
+        useSmartScaler: false
+        image: plugin-virustotal
+        env:
+        - name: RUN_AS_SERVER
+          value: 'true'
+        - name: STATEDIR
+          value: /data
+        - name: RULES_ROOT
+          value: /rules
+        args:
+        - filefeed
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: rules
+          mountPath: /rules
+        volumes:
+        - name: data
+          emptyDir:
+            sizeLimit: 10Mi
+        - name: rules
+          configMap:
+            name: vtselect-rules
+            optional: true
+        ingress:
+          name: plugin-vtfilefeedserver
+          serviceName: plugin-vtfilefeedserver
+          servicePort: 8854
+          host: ''
+          secretName: ''
+          annotations: {}
+          security:
+            enableHarden: true
+            csp: {}
+      vtfilelookup:
+        enabled: false
+        additionalLabels:
+          allow-egress-https-http: 'true'
+        image: plugin-virustotal
+        env:
+        - name: VIRUSTOTAL_APISERVER
+          valueFrom:
+            configMapKeyRef:
+              name: endpoints
+              key: virustotal
+        - name: VIRUSTOTAL_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: '{{ .Values.secrets.virustotalCreds }}'
+              key: apikey
+        - name: LOOKUP_SOURCES
+          value: testing,incidents,reports,samples,tasking,watch
+        args:
+        - filelookup
+      vtdownload:
+        enabled: false
+        additionalLabels:
+          allow-egress-https-http: 'true'
+        image: plugin-virustotal
+        env:
+        - name: VIRUSTOTAL_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: '{{ .Values.secrets.virustotalCreds }}'
+              key: apikey
+        args:
+        - download
+  yara-x:
+    type: yara-x
+    image: plugin-yara
+    enabled: false
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 100m
+      limits:
+        memory: 1Gi
+        cpu: 500m
+    sources: {}
+  suricata:
+    type: suricata
+    image: plugin-suricata
+    enabled: false
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: 500m
+      limits:
+        memory: 2Gi
+        cpu: 1500m
+    sources: {}
+  generic:
+    type: standard
+    enabled: false
+    plugins:
+      alphabets:
+        tmp: 1Gi
+      android-parser: {}
+      build-time-strings: {}
+      mandiant-capa:
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 100m
+          limits:
+            memory: 2Gi
+            cpu: 500m
+      certificates: {}
+      debloat:
+        tmp: 7Gi
+      de4dot: {}
+      dotnet-decompiler: {}
+      dotnet-deob: {}
+      email-headers:
+        image: plugin-email
+        command:
+        - azul-plugin-mail-headers
+      email-mimedecoder:
+        image: plugin-email
+        command:
+        - azul-plugin-mime-decoder
+      email-olemail:
+        image: plugin-email
+        command:
+        - azul-plugin-olemail
+      entropy:
+        maxFileSize: '0'
+      entrypointcheck:
+        resources:
+          limits:
+            memory: 1Gi
+      exiftool:
+        tmp: 300Mi
+        resources:
+          requests:
+            memory: 512Mi
+          limits:
+            memory: 1Gi
+      export-hashes: {}
+      floss:
+        tmp: 2Gi
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 100m
+          limits:
+            memory: 2Gi
+            cpu: 500m
+      ghidra:
+        tmp: 1Gi
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 100m
+          limits:
+            memory: 2Gi
+            cpu: 500m
+        volumes:
+        - name: ghidra-config-cache
+          emptyDir:
+            sizeLimit: 10Mi
+        volumeMounts:
+        - name: ghidra-config-cache
+          mountPath: /home/azul/.config
+      goinfo: {}
+      image-convert: {}
+      index-coincidence: {}
+      jadx:
+        tmp: 2Gi
+        resources:
+          requests:
+            memory: 1Gi
+          limits:
+            memory: 2Gi
+      js-deobf: {}
+      lief-elf:
+        image: plugin-lief
+        command:
+        - azul-plugin-lief-elf
+      lief-fatmacho:
+        image: plugin-lief
+        command:
+        - azul-plugin-fat-macho
+      lief-macho:
+        image: plugin-lief
+        command:
+        - azul-plugin-lief-macho
+      lief-pe:
+        image: plugin-lief
+        command:
+        - azul-plugin-lief-pe
+      lookback-hash:
+        image: plugin-lookback
+        command:
+        - azul-plugin-lookback-hash
+      lookback-search:
+        image: plugin-lookback
+        command:
+        - azul-plugin-lookback-search
+      malcarve:
+        args:
+        - --config
+        - plugin_depth_limit
+        - '3'
+        - --config
+        - plugin_depth_authors
+        - Malcarve
+      netinfo: {}
+      pdftools-pdfid:
+        image: plugin-pdftools
+        command:
+        - azul-plugin-pdfid
+      pdftools-pdfinfo:
+        image: plugin-pdftools
+        command:
+        - azul-plugin-pdfinfo
+      pdftools-pdftext:
+        image: plugin-pdftools
+        command:
+        - azul-plugin-pdftext
+      portex:
+        volumes:
+        - name: fontconfig-cache
+          emptyDir:
+            sizeLimit: 200Mi
+        volumeMounts:
+        - name: fontconfig-cache
+          mountPath: /var/cache/fontconfig
+        env:
+        - name: XDG_CACHE_HOME
+          value: /var/cache/fontconfig
+      qrcode: {}
+      python: {}
+      repeated-bytes:
+        tmp: 1Gi
+      richid: {}
+      script-decoder:
+        tmp: 1Gi
+      shortcut:
+        tmp: 1Gi
+      unbox:
+        maxFileSize: '1000000000'
+        tmp: 4Gi
+        resources:
+          requests:
+            memory: 1Gi
+          limits:
+            memory: 2Gi
+        config:
+          PLUGIN_FILTER_MAX_CONTENT_SIZE: 4GiB
+images:
+  pullPolicy: IfNotPresent
+  external:
+    git-sync: registry-1.docker.io/registry.k8s.io/git-sync/git-sync:v4.5.0@sha256:0e64aedb0d0ae0a3bab880349a5109b2a31891d646dd61e433ca36ed220dff1f
+    tika_external: registry-1.docker.io/apache/tika:3.2.3.0-full@sha256:21d8052de04e491ccf66e8680ade4da6f3d453a56d59f740b4167e54167219b7
+    alloy: registry-1.docker.io/grafana/alloy:v1.14.1@sha256:8f5666aebb871ba43ee2d65159c5d1c26c903720efafaf2d9ed4e237afc3bc88
+    burrow: registry-1.docker.io/ghcr.io/linkedin/burrow/burrow:v1.9.5@sha256:670c59255a339e14e241ca2d8f80085628d9295e6a46102b4730ace820e51952
+    redis: registry-1.docker.io/redis:8.6.1-trixie
+  customRegistry: registry-1.docker.io/asdazul/
+  custom:
+    audit-forwarder: audit-forwarder:10.0.0
+    backup: backup:10.0.0
+    client: client:10.0.0
+    dispatcher: dispatcher:10.0.0
+    docs: docs:10.0.0
+    restapi-server: restapi-server:10.0.0
+    webui: webui:10.0.0
+    plugin-alphabets: plugin-alphabets:10.0.0
+    plugin-android-parser: plugin-android-parser:10.0.0
+    plugin-assemblyline: plugin-assemblyline:10.0.0
+    plugin-build-time-strings: plugin-build-time-strings:10.0.0
+    plugin-mandiant-capa: plugin-mandiant-capa:10.0.0
+    plugin-cape: plugin-cape:10.0.0
+    plugin-de4dot: plugin-de4dot:10.0.0
+    plugin-dotnet-decompiler: plugin-dotnet-decompiler:10.0.0
+    plugin-dotnet-deob: plugin-dotnet-deob:10.0.0
+    plugin-email: plugin-email:10.0.0
+    plugin-entropy: plugin-entropy:10.0.0
+    plugin-entrypointcheck: plugin-entrypointcheck:10.0.0
+    plugin-exiftool: plugin-exiftool:10.0.0
+    plugin-export-hashes: plugin-export-hashes:10.0.0
+    plugin-maco: plugin-maco:10.0.0
+    plugin-floss: plugin-floss:10.0.0
+    plugin-goinfo: plugin-goinfo:10.0.0
+    plugin-image-convert: plugin-image-convert:10.0.0
+    plugin-index-coincidence: plugin-index-coincidence:10.0.0
+    plugin-js-deobf: plugin-js-deobf:10.0.0
+    plugin-lief: plugin-lief:10.0.0
+    plugin-lookback: plugin-lookback:10.0.0
+    plugin-malcarve: plugin-malcarve:10.0.0
+    plugin-netinfo: plugin-netinfo:10.0.0
+    plugin-nsrl: plugin-nsrl:10.0.0
+    plugin-office: plugin-office:10.0.0
+    plugin-pdftools: plugin-pdftools:10.0.0
+    plugin-python: plugin-python:10.0.0
+    plugin-repeated-bytes: plugin-repeated-bytes:10.0.0
+    plugin-retrohunt: plugin-retrohunt:10.0.0
+    plugin-richid: plugin-richid:10.0.0
+    plugin-script-decoder: plugin-script-decoder:10.0.0
+    plugin-shortcut: plugin-shortcut:10.0.0
+    plugin-tika: plugin-tika:10.0.0
+    plugin-unbox: plugin-unbox:10.0.0
+    plugin-virustotal: plugin-virustotal:10.0.0
+    stats: stats:10.0.0
+    nsrl-lookup-server: nsrl-lookup-server:10.0.0
+    plugin-suricata: plugin-suricata:10.0.0
+    scaler: scaler:10.0.0
+    plugin-debloat: plugin-debloat:10.0.0
+    plugin-yara: plugin-yara:10.0.0
+    plugin-portex: plugin-portex:10.0.0
+    plugin-truncated: plugin-truncated:10.0.0
+    plugin-certificates: plugin-certificates:10.0.0
+    plugin-qrcode: plugin-qrcode:10.0.0
+    smart-string-filter: smart-string-filter:10.0.0
+    plugin-ghidra: plugin-ghidra:10.0.0
+    plugin-report-feeds: plugin-report-feeds:10.0.0
+    plugin-jadx: plugin-jadx:10.0.0

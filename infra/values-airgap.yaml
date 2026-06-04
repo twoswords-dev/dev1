@@ -1,8 +1,6 @@
-# Consolidated Azul infra values for Argo CD.
-# Starts from the upstream defaults, with the working airgap/k3s overrides applied.
-# Argo CD uses this file directly; values-k3s-infra.yaml is kept only as historical reference.
-
-imagePullSecrets: []
+# Airgapped production profile for a 10-node k3s cluster (*.interal.au).
+imagePullSecrets:
+- name: airgap-registry
 tolerations: []
 affinity: {}
 podAnnotations: {}
@@ -34,6 +32,14 @@ strimzi-operator:
     limits:
       memory: 384Mi
       cpu: 500m
+  image:
+    registry: registry-1.docker.io
+    repository: quay.io/strimzi
+    tag: 1.0.0
+  defaultImageRegistry: registry-1.docker.io
+  defaultImageRepository: quay.io/strimzi
+  imagePullSecrets:
+  - name: airgap-registry
 opensearch-operator:
   installCRDs: true
   manager:
@@ -45,6 +51,12 @@ opensearch-operator:
       limits:
         memory: 384Mi
         cpu: 500m
+    image:
+      repository: registry-1.docker.io/opensearchproject/opensearch-operator
+      tag: 3.0.0-alpha
+      pullPolicy: IfNotPresent
+    imagePullSecrets:
+    - name: airgap-registry
   webhook:
     certManager:
       enabled: true
@@ -56,16 +68,16 @@ customNetworkPolicies: []
 minio:
   main:
     enable: true
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    image: registry-1.docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     secretName: s3-keys
-    replicas: 1
+    replicas: 4
     resources:
       requests:
-        memory: 256Mi
-        cpu: 100m
+        memory: 4Gi
+        cpu: 1000m
       limits:
-        memory: 512Mi
-        cpu: 500m
+        memory: 8Gi
+        cpu: 4000m
     labels:
       app: s3-store-minio
       storage: minio-disk
@@ -73,14 +85,14 @@ minio:
       allow-connect-minio-cluster: 'true'
     storageClass: longhorn
     requests:
-      storage: 5Gi
+      storage: 5Ti
     ingress:
       api:
         enable: true
-        host: minio-api.local
+        host: minio-api.interal.au
       console:
         enable: true
-        host: minio.local
+        host: minio.interal.au
       ingressClassName: nginx
       secretName: minio-tls
       annotations:
@@ -124,22 +136,22 @@ opensearch:
   harden: false
   general:
     version: 3.2.0
-    replicas: 1
+    replicas: 3
     setVMMaxMapCount: true
   nodes:
-    diskSize: 10Gi
+    diskSize: 2Ti
     resources:
       requests:
-        memory: 1Gi
-        cpu: 500m
+        memory: 12Gi
+        cpu: 4000m
       limits:
-        memory: 1536Mi
-        cpu: 1000m
+        memory: 16Gi
+        cpu: 8000m
     env:
     - name: cluster.initial_master_nodes
-      value: azul-opensearch-nodes-0
+      value: azul-opensearch-nodes-0,azul-opensearch-nodes-1,azul-opensearch-nodes-2
     - name: discovery.seed_hosts
-      value: azul-opensearch-nodes-0
+      value: azul-opensearch-nodes
     probes:
       startup:
         command:
@@ -174,7 +186,7 @@ opensearch:
     ingress:
       enable: true
       ingressClassName: nginx
-      host: opensearch-dashboards.local
+      host: opensearch-dashboards.interal.au
       secretName: dashboard-ingress-tls
       annotations:
         cert-manager.io/issuer: azul-infra-ca
@@ -191,13 +203,6 @@ opensearch:
       configMap:
         name: azul-opensearch-certs
       restartPods: true
-    resources:
-      requests:
-        memory: 768Mi
-        cpu: 200m
-      limits:
-        memory: 768Mi
-        cpu: 200m
     additionalConfig:
       opensearch_security.multitenancy.enabled: 'true'
       opensearch_security.multitenancy.tenants.preferred: '["Private", "Global"]'
@@ -215,8 +220,15 @@ opensearch:
       opensearch_security.openid.connect_url: https://keycloak.azul-infra.svc.cluster.local/realms/azul/.well-known/openid-configuration
       opensearch_security.openid.client_id: opensearch-dashboards
       opensearch_security.openid.client_secret: ${OPENSEARCH_DASHBOARDS_CLIENT_SECRET}
-      opensearch_security.openid.base_redirect_url: https://opensearch-dashboards.local
+      opensearch_security.openid.base_redirect_url: https://opensearch-dashboards.interal.au
       opensearch_security.openid.root_ca: /usr/share/opensearch-dashboards/config/certs/ca-certificates
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 500m
+      limits:
+        memory: 4Gi
+        cpu: 2000m
   internalUsers:
     _meta:
       type: internalusers
@@ -664,61 +676,69 @@ opensearch:
         authz: {}
         auth_failure_listeners: {}
         multi_rolespan_enabled: true
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
 kafka:
   enable: true
   name: azul-kafka
   version: 4.2.0
   metadataVersion: 4.2-IV0
-  replicas: 1
+  replicas: 3
   resources:
     requests:
-      memory: 1Gi
-      cpu: 250m
-    limits:
-      memory: 1536Mi
+      memory: 4Gi
       cpu: 1000m
+    limits:
+      memory: 6Gi
+      cpu: 4000m
   jvmOptions:
-    -Xms: 512m
-    -Xmx: 512m
+    -Xms: 2g
+    -Xmx: 2g
   kafkactl:
     enable: false
     image: deviceinsight/kafkactl:v5.13.0-ubuntu
   storage:
     type: persistent-claim
-    size: 5Gi
+    size: 1Ti
     kraftMetadata: shared
     deleteClaim: false
     class: longhorn
   matchAgentPool: ''
   antiAgentPool: ''
   clusterConfig:
-    offsets.topic.replication.factor: 1
-    transaction.state.log.replication.factor: 1
-    transaction.state.log.min.isr: 1
+    offsets.topic.replication.factor: 3
+    transaction.state.log.replication.factor: 3
+    transaction.state.log.min.isr: 2
     auto.create.topics.enable: false
-    default.replication.factor: 1
-    min.insync.replicas: 1
+    default.replication.factor: 3
+    min.insync.replicas: 2
     num.io.threads: 4
     num.network.threads: 3
-    num.partitions: 1
+    num.partitions: 6
     num.replica.fetchers: 1
     socket.request.max.bytes: 104857600
-    unclean.leader.election.enable: true
+    unclean.leader.election.enable: false
     message.max.bytes: 4194352
     compression.type: snappy
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
 keycloak:
   enable: true
-  image: quay.io/keycloak/keycloak:26.1
-  replicas: 1
+  image: registry-1.docker.io/quay.io/keycloak/keycloak:26.1
+  replicas: 2
   resources:
     requests:
-      memory: 512Mi
-      cpu: 100m
-    limits:
-      memory: 1Gi
+      memory: 2Gi
       cpu: 500m
+    limits:
+      memory: 4Gi
+      cpu: 2000m
   proxyHeaderArg: xforwarded
-  hostnameArg: https://keycloak.local
+  hostnameArg: https://keycloak.interal.au
   extraArgs:
   - --hostname-backchannel-dynamic=true
   tls:
@@ -730,7 +750,7 @@ keycloak:
     duration: 87600h0m0s
     renewBefore: 8760h0m0s
   ingress:
-    hostname: keycloak.local
+    hostname: keycloak.interal.au
     secretName: keycloak-tls
     annotations:
       cert-manager.io/issuer: azul-infra-ca
@@ -738,15 +758,15 @@ keycloak:
       nginx.ingress.kubernetes.io/backend-protocol: HTTPS
   postgres:
     storageClassName: longhorn
-    size: 2Gi
+    size: 100Gi
     resources:
       requests:
-        memory: 256Mi
-        cpu: 100m
-      limits:
-        memory: 512Mi
+        memory: 2Gi
         cpu: 500m
-    image: postgres:17.4
+      limits:
+        memory: 4Gi
+        cpu: 2000m
+    image: registry-1.docker.io/postgres:17.4
 kube-prometheus-stack:
   fullnameOverride: kube-prometheus-stack
   enable: false
