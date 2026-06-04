@@ -142,11 +142,11 @@ opensearch:
     diskSize: 2Ti
     resources:
       requests:
-        memory: 12Gi
-        cpu: 4000m
+        memory: 6Gi
+        cpu: 3000m
       limits:
-        memory: 16Gi
-        cpu: 8000m
+        memory: 8Gi
+        cpu: 6000m
     env:
     - name: cluster.initial_master_nodes
       value: azul-opensearch-nodes-0,azul-opensearch-nodes-1,azul-opensearch-nodes-2
@@ -163,7 +163,7 @@ opensearch:
         - /bin/bash
         - -c
         - curl -k --silent https://localhost:9200 >/dev/null
-    jvm: -Xms8g -Xmx8g
+    jvm: -Xms4g -Xmx4g
   selfSigned: false
   issuerRef:
     name: azul-infra-ca
