@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: http://192.168.10.150:3002/twoswords/azul-app.git
-    targetRevision: azul-old
+    targetRevision: main
     path: infra
   destination:
     server: https://kubernetes.default.svc
