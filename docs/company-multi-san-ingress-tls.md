@@ -19,6 +19,27 @@ pod/service TLS unless explicitly called out.
 A company `.cer` file usually contains only the **public certificate**. That is
 not enough to create a Kubernetes TLS secret.
 
+For Kubernetes ingress TLS, you always need the private key that matches the
+certificate. The server proves ownership of the certificate during the TLS
+handshake by using that private key.
+
+Valid inputs are either:
+
+```text
+company.cer + matching company.key
+```
+
+or:
+
+```text
+you generate company.key + company.csr
+company signs company.csr and returns company.cer
+you use returned company.cer with your original company.key
+```
+
+A `.cer` by itself is not enough unless you already have the private key that was
+used to generate the CSR for that certificate.
+
 To use it with Kubernetes ingresses you need:
 
 ```text
@@ -198,6 +219,10 @@ company-managed ingress secrets:
 ```yaml
 cert-manager.io/issuer: azul-infra-ca
 ```
+
+So yes: if you manually provide company TLS secrets, remove the local
+`azul-infra-ca` cert-manager annotations from the affected browser-facing
+Ingress values, or cert-manager may overwrite/regenerate those secrets.
 
 Company-cert-manager mode means you would instead configure something like:
 
