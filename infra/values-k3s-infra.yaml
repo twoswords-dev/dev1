@@ -131,7 +131,7 @@ opensearch:
         command:
         - /bin/bash
         - -c
-        - curl -k --fail --silent --user "$OPENSEARCH_PROBE_USERNAME:$OPENSEARCH_PROBE_PASSWORD" https://localhost:9200 >/dev/null
+        - timeout 2 bash -c '</dev/tcp/127.0.0.1/9200'
     resources:
       requests:
         memory: 1Gi
@@ -162,30 +162,14 @@ opensearch:
       opensearch_security.multitenancy.tenants.preferred: '["Private", "Global"]'
       opensearch_security.readonly_mode.roles: '["kibana_read_only"]'
       opensearch_security.cookie.secure: 'true'
-      opensearch_security.auth.type: openid
-      opensearch_security.openid.scope: openid profile email offline_access roles azul
-      # OpenSearch Dashboards fetches OIDC metadata server-side, so use the
-      # in-cluster Keycloak service URL. Keycloak still advertises the public
-      # issuer/front-channel URLs (https://keycloak.local/...) for browser redirects.
-      # Ref: https://docs.opensearch.org/latest/security/authentication-backends/openid-connect/
-      opensearch_security.openid.connect_url: https://keycloak.azul-infra.svc.cluster.local/realms/azul/.well-known/openid-configuration
-      opensearch_security.openid.client_id: opensearch-dashboards
-      opensearch_security.openid.client_secret: ${OPENSEARCH_DASHBOARDS_CLIENT_SECRET}
-      opensearch_security.openid.base_redirect_url: https://opensearch-dashboards.local
-      # Trust the same cert-manager CA used by Keycloak's internal TLS cert.
-      opensearch_security.openid.root_ca: /usr/share/opensearch-dashboards/config/certs/ca-certificates
+      opensearch_security.auth.type: basicauth
     additionalVolumes:
     - name: additional-certs
       path: /usr/share/opensearch-dashboards/config/certs
       configMap:
         name: azul-opensearch-certs
       restartPods: true
-    env:
-    - name: OPENSEARCH_DASHBOARDS_CLIENT_SECRET
-      valueFrom:
-        secretKeyRef:
-          name: opensearch-dashboards-oidc
-          key: client-secret
+    env: []
   securityConfig:
     _meta:
       type: config
@@ -202,7 +186,6 @@ opensearch:
           index: .kibana
           sign_in_options:
           - BASIC
-          - OPENID
         http:
           anonymous_auth_enabled: false
         authc:
@@ -216,28 +199,6 @@ opensearch:
               challenge: false
             authentication_backend:
               type: intern
-          openid_auth_domain:
-            http_enabled: true
-            transport_enabled: true
-            order: 1
-            http_authenticator:
-              type: openid
-              challenge: false
-              config:
-                subject_key: preferred_username
-                roles_key: roles
-                jwt_header: Authorization
-                # OpenSearch fetches OIDC metadata/JWKS server-side; keycloak.local
-                # is only a browser/ingress DNS name and is not resolvable inside
-                # pods, so use the in-cluster Keycloak service URL here.
-                # Ref: https://docs.opensearch.org/latest/security/authentication-backends/openid-connect/
-                openid_connect_url: https://keycloak.azul-infra.svc.cluster.local/realms/azul/.well-known/openid-configuration
-                jwt_clock_skew_tolerance_seconds: 30
-                openid_connect_idp.enable_ssl: true
-                openid_connect_idp.verify_hostnames: true
-                openid_connect_idp.pemtrustedcas_filepath: /usr/share/opensearch/config/certs/ca-certificates
-            authentication_backend:
-              type: noop
         authz: {}
         auth_failure_listeners: {}
         multi_rolespan_enabled: true
@@ -344,13 +305,9 @@ keycloak:
       memory: 1Gi
       cpu: 500m
   proxyHeaderArg: xforwarded
-  # Full public URL required when hostname-backchannel-dynamic=true.
   hostnameArg: https://keycloak.local
-  # Allows Keycloak to return public front-channel URLs for browsers while
-  # still accepting back-channel/server-side requests through the Kubernetes
-  # service URL used by OpenSearch/OpenSearch Dashboards.
   extraArgs:
-    - --hostname-backchannel-dynamic=true
+  - --hostname-backchannel-dynamic=true
   tls:
     enabled: true
     secretName: keycloak-internal-tls

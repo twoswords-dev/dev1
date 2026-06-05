@@ -153,7 +153,9 @@ kubectl apply -f creds.yaml
 ```
 
 The committed `creds.yaml` uses explicit `azul-infra` namespaces so secrets are
-created where the chart/operator expects them.
+created where the chart/operator expects them. OpenSearch Dashboards starts with
+basic auth during bootstrap; OIDC is enabled later by
+`infra/scripts/configure-opensearch-security-azul.sh`.
 
 - After activating the Helm chart, ensure Azul application pods trust the CA that
   issued OpenSearch and Keycloak certificates. In the Azul core chart this is the
@@ -179,10 +181,11 @@ created where the chart/operator expects them.
   this runtime-generated CA is not removed by self-heal. Do not commit generated
   cluster CA material into `azul/ca-certificates`.
 
-The k3s OpenSearch node startup probe checks only that localhost port 9200 is
-listening. The readiness probe uses the admin credentials after securityadmin has
-initialized the security index; this avoids a startup-probe/securityadmin
-catch-22 during first boot.
+The k3s OpenSearch node startup and readiness probes initially check only that
+localhost port 9200 is listening. This publishes the OpenSearch service endpoint
+before the security index exists, allowing the operator securityadmin job to
+initialize the cluster. Do not make readiness depend on authenticated HTTP until
+after bootstrap.
 
 **IMPORTANT**: The OpenSearch Operator does not currently support hot
 certificate rotation. While Cert Manager will automatically

@@ -63,9 +63,9 @@ The secret manifests include explicit namespaces (`azul-infra` and `azul-app`).
 
 `creds.yaml` intentionally does **not** contain hard-coded TLS certificates or
 runtime CA bundles. Infra TLS is issued by cert-manager from `azul-infra-ca`.
-The `opensearch-dashboards-oidc` secret in `infra/creds.yaml` is only a
-placeholder so Dashboards can start before Keycloak is configured; the Keycloak
-configuration script replaces it.
+OpenSearch Dashboards starts with basic auth during bootstrap. The Keycloak and
+OpenSearch configuration scripts later switch it to OIDC and create/update the
+`opensearch-dashboards-oidc` secret with the real client secret.
 
 These contain live base64-encoded non-certificate values for this environment. To rotate instead, set explicit values and run:
 
@@ -95,9 +95,9 @@ kubectl -n azul-infra get pods
 ```
 
 OpenSearch may log `OpenSearch Security not initialized` during first boot; that
-is expected until the operator security-config job completes. The startup probe
-only checks that port 9200 is listening so it does not restart OpenSearch before
-securityadmin has a chance to initialize the security index.
+is expected until the operator security-config job completes. The startup and readiness probes initially check only that port 9200 is
+listening. This intentionally publishes service endpoints before the security
+index exists, so the operator securityadmin job can initialize OpenSearch.
 
 ## 5. Create Azul external web TLS secret
 
