@@ -10,6 +10,7 @@ See also:
 - `docs/company-tls.md` for using company PKI for Azul external browser TLS.
 - `docs/company-multi-san-ingress-tls.md` for using one company multi-SAN
   certificate across Azul, Keycloak, OpenSearch Dashboards, and MinIO ingresses.
+- `docs/homelab-flow.md` for the local cert-manager CA to Windows trust flow.
 
 ## Applications
 
