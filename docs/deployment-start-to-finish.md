@@ -63,12 +63,13 @@ The secret manifests include explicit namespaces (`azul-infra` and `azul-app`).
 
 `creds.yaml` intentionally does **not** contain hard-coded TLS certificates or
 runtime CA bundles. Infra TLS is issued by cert-manager from `azul-infra-ca`.
-During bootstrap, OpenSearch Dashboards uses basic auth and disables TLS verification to OpenSearch until the runtime CA bundle/OIDC script has been applied. OpenSearch Dashboards starts with basic auth during bootstrap. The Keycloak and
-OpenSearch configuration scripts later switch it to OIDC and create/update the
-`opensearch-dashboards-oidc` secret with the real client secret. The Dashboards
-Ingress sets larger nginx proxy header buffers because OIDC login can return
-large session cookies; without those annotations the callback may fail with
-`502 upstream sent too big header`.
+OpenSearch Dashboards is declared for OIDC in `infra/values*.yaml` and disables
+TLS verification to OpenSearch during bootstrap to avoid a security-bootstrap
+catch-22. The Keycloak and OpenSearch configuration scripts create/update the
+`opensearch-dashboards-oidc` secret with the real client secret and apply the
+OpenSearch OIDC security config. The Dashboards Ingress sets larger nginx proxy
+header buffers because OIDC login can return large session cookies; without
+those annotations the callback fails with `502 upstream sent too big header`.
 
 These contain live base64-encoded non-certificate values for this environment. To rotate instead, set explicit values and run:
 
@@ -144,8 +145,9 @@ scripts/update-azul-app-ca-bundle.sh
 kubectl -n azul-app rollout restart deploy,sts
 ```
 
-The Argo CD app ignores live differences for this ConfigMap key so Argo does not
-remove the runtime CA.
+The Argo CD app is configured to ignore live differences for this ConfigMap key,
+but after a fresh sync or self-heal always verify the runtime CA is still present
+and rerun the script if Azul logs show TLS verification failures.
 
 ## 8. Configure Keycloak for Azul
 
@@ -171,8 +173,9 @@ in runtime state that cannot be committed safely, including Keycloak client
 secrets, OpenSearch role mappings/users, and app-side secrets. It switches Azul
 from the bootstrap `admin` OpenSearch account to the least-privilege
 `azul_writer` account. The committed app secret defaults now match this writer
-password so Argo does not revert Azul back to an invalid bootstrap password. After it runs, refresh the Azul CA bundle and restart the
-pods that talk to OpenSearch:
+password so Argo does not revert Azul back to an invalid bootstrap password.
+After it runs, refresh the Azul CA bundle and restart the pods that talk to
+OpenSearch/Keycloak:
 
 ```bash
 scripts/update-azul-app-ca-bundle.sh
@@ -188,11 +191,16 @@ kubectl -n azul-app get secret azul-external-web-tls
 kubectl -n argocd get applications.argoproj.io azul-infra azul
 ```
 
-Check certificates:
+Check certificates and runtime CA propagation:
 
 ```bash
 openssl s_client -connect azul.local:443 -servername azul.local </dev/null 2>/dev/null | openssl x509 -noout -subject -issuer -dates -ext subjectAltName
 openssl s_client -connect keycloak.local:443 -servername keycloak.local </dev/null 2>/dev/null | openssl x509 -noout -subject -issuer -dates -ext subjectAltName
+kubectl -n azul-app exec restapi-0 -- sh -c 'grep -c "BEGIN CERTIFICATE" /cafile/ca.crt'
+kubectl -n azul-app exec restapi-0 -- python3 - <<'PY'
+from pathlib import Path
+print('Azul Infra CA in mounted bundle:', 'CN=Azul Infra CA' in Path('/cafile/ca.crt').read_text())
+PY
 ```
 
 Browse:
@@ -223,4 +231,51 @@ KEYCLOAK_URL=https://keycloak.local AZUL_URL=https://azul.local OPENSEARCH_DASHB
 infra/scripts/configure-opensearch-security-azul.sh
 scripts/update-azul-app-ca-bundle.sh
 kubectl -n azul-app rollout restart deploy/ms-ingest-binary deploy/ms-ingest-status deploy/ms-ageoff sts/restapi
+```
+
+## 12. Troubleshooting notes
+
+### Azul login succeeds but API access fails with certificate errors
+
+If `restapi` logs contain:
+
+```text
+httpx.ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate
+```
+
+then the current cert-manager-generated `azul-infra-ca` is missing from the
+mounted Azul CA bundle. Re-sync the runtime CA and restart the pods that mount
+it:
+
+```bash
+scripts/update-azul-app-ca-bundle.sh
+kubectl -n azul-app rollout restart sts/restapi deploy/ms-ingest-binary deploy/ms-ingest-status deploy/ms-ageoff
+kubectl -n azul-app exec restapi-0 -- sh -c 'grep -c "BEGIN CERTIFICATE" /cafile/ca.crt'
+```
+
+A successful in-pod smoke test is:
+
+```bash
+kubectl -n azul-app exec restapi-0 -- python3 - <<'PY'
+import httpx
+for url in [
+    'https://keycloak.azul-infra.svc.cluster.local/realms/azul/.well-known/openid-configuration',
+    'https://azul-opensearch.azul-infra.svc.cluster.local:9200',
+]:
+    r = httpx.get(url, timeout=10)
+    print(url, r.status_code)
+PY
+```
+
+Expected result: Keycloak returns `200`; OpenSearch returns `401` without auth,
+which confirms TLS trust is working.
+
+### OpenSearch Dashboards returns 502 after Keycloak login
+
+Check ingress-nginx logs for `upstream sent too big header`. The chart should
+include these annotations on the Dashboards Ingress:
+
+```yaml
+nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+nginx.ingress.kubernetes.io/proxy-buffers-number: '8'
 ```

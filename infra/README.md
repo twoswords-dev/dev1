@@ -153,10 +153,12 @@ kubectl apply -f creds.yaml
 ```
 
 The committed `creds.yaml` uses explicit `azul-infra` namespaces so secrets are
-created where the chart/operator expects them. OpenSearch Dashboards starts with
-basic auth during bootstrap; OIDC is enabled later by
-`infra/scripts/configure-opensearch-security-azul.sh`. Its Ingress includes
-larger nginx proxy header buffers for OIDC callback/session headers.
+created where the chart/operator expects them. OpenSearch Dashboards is declared
+for OIDC in `values*.yaml`; `infra/scripts/configure-keycloak-azul.sh` and
+`infra/scripts/configure-opensearch-security-azul.sh` populate the runtime client
+secret and OpenSearch OIDC security config. Its Ingress includes larger nginx
+proxy header buffers for OIDC callback/session headers; without those, login can
+fail with `502 upstream sent too big header`.
 
 - After activating the Helm chart, ensure Azul application pods trust the CA that
   issued OpenSearch and Keycloak certificates. In the Azul core chart this is the
@@ -178,9 +180,12 @@ larger nginx proxy header buffers for OIDC callback/session headers.
   kubectl -n azul-app rollout restart deploy,sts
   ```
 
-  The Argo CD `azul` Application ignores `/data/ca.crt` on `azul-ca-bundle` so
-  this runtime-generated CA is not removed by self-heal. Do not commit generated
-  cluster CA material into `azul/ca-certificates`.
+  The Argo CD `azul` Application is configured to ignore `/data/ca.crt` on
+  `azul-ca-bundle` so this runtime-generated CA is not removed by self-heal. Do
+  not commit generated cluster CA material into `azul/ca-certificates`. If Azul
+  login succeeds but API calls fail with `httpx.ConnectError: [SSL:
+  CERTIFICATE_VERIFY_FAILED]`, rerun the CA bundle script and restart the pods
+  that mount `/cafile/ca.crt`.
 
 The k3s OpenSearch node startup and readiness probes initially check only that
 localhost port 9200 is listening. This publishes the OpenSearch service endpoint
