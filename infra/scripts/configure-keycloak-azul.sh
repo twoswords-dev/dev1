@@ -211,7 +211,7 @@ OSD_ROOT="$(url_no_slash "$OPENSEARCH_DASHBOARDS_URL")"
 
 ensure_realm
 
-for role in azul-access REL:APPLE; do
+for role in azul-access REL:APPLE opensearch-admins; do
   ensure_role "$role"
 done
 
@@ -224,6 +224,9 @@ done
 assign_role_to_group azul-access general
 assign_role_to_group azul-access azul_reader
 assign_role_to_group REL:APPLE general
+# OpenSearch security reads the OIDC `roles` claim, so expose the admin group as
+# a realm role as well as a Keycloak group.
+assign_role_to_group opensearch-admins opensearch-admins
 
 ensure_user "$BASIC_USER" "$BASIC_PASSWORD"
 ensure_user "$OPENSEARCH_ADMIN_USER" "$OPENSEARCH_ADMIN_PASSWORD"
