@@ -234,7 +234,7 @@ spec:
     {{- end }}
     enable: true
     version: {{ .Values.opensearch.dashboard.version }}
-    replicas: 1
+    replicas: {{ .Values.opensearch.dashboard.replicas | default 1 }}
     opensearchCredentialsSecret:
       name: {{ .Values.opensearch.dashboardCredentialsSecret }}
     {{- with .Values.imagePullSecrets }}

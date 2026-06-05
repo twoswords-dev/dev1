@@ -24,6 +24,9 @@ OPENSEARCH_ADMIN_PASSWORD="${OPENSEARCH_ADMIN_PASSWORD:-}"
 AZUL_WRITER_USER="${AZUL_WRITER_USER:-azul_writer}"
 AZUL_WRITER_PASSWORD="${AZUL_WRITER_PASSWORD:-AzulWriter1!}"
 KEYCLOAK_URL="${KEYCLOAK_URL:-https://keycloak.local}"
+# URL used by in-cluster OpenSearch/OpenSearch Dashboards to fetch OIDC metadata.
+# Do not use keycloak.local here: pod DNS does not know workstation hosts-file names.
+KEYCLOAK_OIDC_URL="${KEYCLOAK_OIDC_URL:-https://keycloak.azul-infra.svc.cluster.local}"
 KEYCLOAK_RESOLVE_IP="${KEYCLOAK_RESOLVE_IP:-192.168.10.111}"
 KEYCLOAK_ADMIN_USER="${KEYCLOAK_ADMIN_USER:-admin}"
 KEYCLOAK_ADMIN_PASSWORD="${KEYCLOAK_ADMIN_PASSWORD:-}"
@@ -235,7 +238,7 @@ config:
           config:
             subject_key: preferred_username
             roles_key: roles
-            openid_connect_url: "$KEYCLOAK_URL/realms/$KEYCLOAK_REALM/.well-known/openid-configuration"
+            openid_connect_url: "$KEYCLOAK_OIDC_URL/realms/$KEYCLOAK_REALM/.well-known/openid-configuration"
             openid_connect_idp.enable_ssl: true
             openid_connect_idp.verify_hostnames: true
             openid_connect_idp.pemtrustedcas_filepath: "$CA_BUNDLE_PATH"
@@ -287,7 +290,7 @@ opensearch_security.readonly_mode.roles: ["kibana_read_only"]
 opensearch_security.cookie.secure: true
 opensearch_security.auth.type: "openid"
 opensearch_security.openid.scope: "openid profile email offline_access"
-opensearch_security.openid.connect_url: "$KEYCLOAK_URL/realms/$KEYCLOAK_REALM/.well-known/openid-configuration"
+opensearch_security.openid.connect_url: "$KEYCLOAK_OIDC_URL/realms/$KEYCLOAK_REALM/.well-known/openid-configuration"
 opensearch_security.openid.client_id: "$DASHBOARDS_CLIENT_ID"
 opensearch_security.openid.client_secret: "$DASHBOARDS_CLIENT_SECRET"
 opensearch_security.openid.base_redirect_url: "$DASHBOARDS_URL"
