@@ -2,6 +2,10 @@
 
 This is the tested local/homelab deployment flow for this repo.
 
+See also `docs/ad-hoc-fixes-ledger.md` for the live fixes discovered during the
+initial bring-up and whether each one is now baked into the repo or remains an
+intentional runtime/scripted step.
+
 ## Applications
 
 | Argo app | Chart path | Namespace | Values file |
