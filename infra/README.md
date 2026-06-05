@@ -164,8 +164,17 @@ kubectl apply -f creds.yaml
   kubectl -n azul-infra get secret azul-infra-ca -o jsonpath='{.data.ca\.crt}' | base64 -d
   ```
 
-  Append that certificate to `azul/ca-certificates` and resync the Azul app, or
-  patch/create the live ConfigMap in `azul-app` if you are testing manually.
+  For local/k3s rebuilds, patch the live app CA-bundle ConfigMap after the Azul
+  app is synced:
+
+  ```bash
+  scripts/update-azul-app-ca-bundle.sh
+  kubectl -n azul-app rollout restart deploy,sts
+  ```
+
+  The Argo CD `azul` Application ignores `/data/ca.crt` on `azul-ca-bundle` so
+  this runtime-generated CA is not removed by self-heal. Do not commit generated
+  cluster CA material into `azul/ca-certificates`.
 
 **IMPORTANT**: The OpenSearch Operator does not currently support hot
 certificate rotation. While Cert Manager will automatically

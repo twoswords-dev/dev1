@@ -111,17 +111,27 @@ opensearch:
       value: azul-opensearch-nodes-0
     - name: discovery.seed_hosts
       value: azul-opensearch-nodes-0
+    - name: OPENSEARCH_PROBE_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: azul-cluster-admincredentials
+          key: username
+    - name: OPENSEARCH_PROBE_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: azul-cluster-admincredentials
+          key: password
     probes:
       startup:
         command:
         - /bin/bash
         - -c
-        - curl -k --silent https://localhost:9200 >/dev/null
+        - curl -k --fail --silent --user "$OPENSEARCH_PROBE_USERNAME:$OPENSEARCH_PROBE_PASSWORD" https://localhost:9200 >/dev/null
       readiness:
         command:
         - /bin/bash
         - -c
-        - curl -k --silent https://localhost:9200 >/dev/null
+        - curl -k --fail --silent --user "$OPENSEARCH_PROBE_USERNAME:$OPENSEARCH_PROBE_PASSWORD" https://localhost:9200 >/dev/null
     resources:
       requests:
         memory: 1Gi

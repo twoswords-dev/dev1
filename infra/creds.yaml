@@ -54,3 +54,14 @@ type: Opaque
 data:
   password: a2liYW5hc2VydmVycGFzc3dvcmQ=
   username: a2liYW5hc2VydmVy
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: opensearch-dashboards-oidc
+type: Opaque
+stringData:
+  # Placeholder so OpenSearch Dashboards can start before Keycloak is configured.
+  # infra/scripts/configure-keycloak-azul.sh replaces this with the real client secret.
+  client-secret: change-me-after-keycloak-config

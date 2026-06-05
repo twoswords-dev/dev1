@@ -14,6 +14,15 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: azul-app
+  ignoreDifferences:
+    # The local k3s flow appends the runtime-generated azul-infra CA to this
+    # ConfigMap after infra is synced. Do not let Argo remove that live CA.
+    - group: ""
+      kind: ConfigMap
+      name: azul-ca-bundle
+      namespace: azul-app
+      jsonPointers:
+        - /data/ca.crt
   syncPolicy:
     automated:
       prune: false
