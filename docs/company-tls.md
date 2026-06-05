@@ -3,6 +3,10 @@
 This document covers **Azul external browser TLS only**: the certificate served
 by the `azul.local` ingress to users' browsers.
 
+If you have one company certificate with SANs for multiple browser-facing hosts
+such as Azul, Keycloak, OpenSearch Dashboards, and MinIO, see
+`docs/company-multi-san-ingress-tls.md`.
+
 For this use case, you should **not manually edit ConfigMaps** and usually
 should **not hand-edit Kubernetes Secrets**. Use the existing helper script with
 your company-provided certificate and key.

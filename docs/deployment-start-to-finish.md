@@ -8,6 +8,8 @@ See also:
   bring-up and whether each one is now baked into the repo or remains an
   intentional runtime/scripted step.
 - `docs/company-tls.md` for using company PKI for Azul external browser TLS.
+- `docs/company-multi-san-ingress-tls.md` for using one company multi-SAN
+  certificate across Azul, Keycloak, OpenSearch Dashboards, and MinIO ingresses.
 
 ## Applications
 
