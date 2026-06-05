@@ -63,7 +63,7 @@ The secret manifests include explicit namespaces (`azul-infra` and `azul-app`).
 
 `creds.yaml` intentionally does **not** contain hard-coded TLS certificates or
 runtime CA bundles. Infra TLS is issued by cert-manager from `azul-infra-ca`.
-OpenSearch Dashboards starts with basic auth during bootstrap. The Keycloak and
+During bootstrap, OpenSearch Dashboards uses basic auth and disables TLS verification to OpenSearch until the runtime CA bundle/OIDC script has been applied. OpenSearch Dashboards starts with basic auth during bootstrap. The Keycloak and
 OpenSearch configuration scripts later switch it to OIDC and create/update the
 `opensearch-dashboards-oidc` secret with the real client secret.
 

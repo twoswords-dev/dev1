@@ -206,8 +206,7 @@ opensearch:
       server.name: azul-opensearch-dashboards
       server.host: 0.0.0.0
       server.rewriteBasePath: 'false'
-      opensearch.ssl.verificationMode: certificate
-      opensearch.ssl.certificateAuthorities: /usr/share/opensearch-dashboards/config/certs/ca-certificates
+      opensearch.ssl.verificationMode: none
       opensearch.requestHeadersWhitelist: '["Authorization", "security_tenant", "securitytenant"]'
       opensearch_security.cookie.secure: 'true'
       opensearch_security.auth.type: basicauth
