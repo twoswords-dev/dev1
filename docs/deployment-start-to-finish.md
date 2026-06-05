@@ -163,6 +163,14 @@ Run after OpenSearch, Keycloak, and Azul restapi are ready:
 infra/scripts/configure-opensearch-security-azul.sh
 ```
 
+This script switches Azul from the bootstrap `admin` OpenSearch account to the
+least-privilege `azul_writer` account. If you run it manually, restart the Azul
+pods after Argo has synced the matching `external.opensearch.username` value:
+
+```bash
+kubectl -n azul-app rollout restart deploy/ms-ingest-binary deploy/ms-ingest-status deploy/ms-ageoff sts/restapi
+```
+
 ## 10. Validate
 
 ```bash

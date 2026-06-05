@@ -261,8 +261,11 @@ kubectl -n "$INFRA_NAMESPACE" cp "$TMPDIR/admin.key" "$OS_POD:/tmp/admin.key" -c
 kubectl -n "$INFRA_NAMESPACE" exec "$OS_POD" -c opensearch -- sh -c \
   '/usr/share/opensearch/plugins/opensearch-security/tools/securityadmin.sh -f /tmp/azul-security-config.yml -t config -icl -nhnv -cacert /usr/share/opensearch/config/tls-transport/ca.crt -cert /tmp/admin.crt -key /tmp/admin.key -h 127.0.0.1 -p 9200'
 
-# Update app-side metastore secret so Azul can use the purpose-built writer if
-# values.yaml is set to external.opensearch.username=azul_writer.
+# Update app-side metastore config/secret so Azul uses the purpose-built writer.
+# The k3s Helm values should also set external.opensearch.username=azul_writer so
+# Argo does not revert the ConfigMap after this runtime patch.
+kubectl -n "$AZUL_NAMESPACE" patch configmap metastore --type merge \
+  -p "$(jq -nc --arg u "$AZUL_WRITER_USER" '{data:{METASTORE_OPENSEARCH_USERNAME:$u}}')"
 kubectl -n "$AZUL_NAMESPACE" create secret generic metastore-creds \
   --from-literal=writer="$AZUL_WRITER_PASSWORD" \
   --from-literal=jwt_signing_secret="$(kubectl -n "$AZUL_NAMESPACE" get secret metastore-creds -o jsonpath='{.data.jwt_signing_secret}' 2>/dev/null | base64 -d || openssl rand -base64 48 | tr -d '\n')" \
