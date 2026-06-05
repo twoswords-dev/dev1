@@ -186,6 +186,8 @@ opensearch:
       annotations:
         cert-manager.io/issuer: azul-infra-ca
         nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+        nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+        nginx.ingress.kubernetes.io/proxy-buffers-number: '8'
     env:
     - name: OPENSEARCH_DASHBOARDS_CLIENT_SECRET
       valueFrom:
