@@ -37,8 +37,8 @@ metadata:
 type: Opaque
 data:
   jwt_signing_secret: REJzSjhZb0hYYXdSRllKdkwrNEY2dkNEMXZBZ1kvWGNHOEVQcTI1Z29hbEtnbkprOWFIWWFYQnZoZ3ZLYXIwbw==
-  opensearch_azul_security_password: YWRtaW5wYXNzd29yZA==
-  writer: YWRtaW5wYXNzd29yZA==
+  opensearch_azul_security_password: QXp1bFdyaXRlcjEh
+  writer: QXp1bFdyaXRlcjEh
 ---
 apiVersion: v1
 kind: Secret
