@@ -1,0 +1,205 @@
+# Airgap 2.0 scaled infra overrides.
+#
+# This file is layered on top of infra/values.yaml by argocd/azul-infra-application.yaml
+# on branch airgap-2.0. It preserves all fixes from main and only changes capacity,
+# replica counts, and airgap-ready placeholders.
+#
+# Cluster sizing target: about 80 CPU cores / 100 GiB RAM available to Azul,
+# with larger Longhorn-backed disks.
+#
+# Airgap registry placeholders (intentionally commented out until registry is known):
+# imagePullSecrets:
+# - name: airgap-registry-pull-secret
+#
+# If/when moving images to an internal registry, prefer updating explicit image
+# fields below or adding chart support for a global registry prefix.
+# Example image overrides to fill later:
+# minio:
+#   main:
+#     image: registry.airgap.local/minio/minio:RELEASE.2025-09-07T16-13-09Z
+#   backup:
+#     image: registry.airgap.local/minio/minio:RELEASE.2025-09-07T16-13-09Z
+# keycloak:
+#   image: registry.airgap.local/quay/keycloak/keycloak:26.1
+# kafka:
+#   kafkactl:
+#     image: registry.airgap.local/deviceinsight/kafkactl:v5.13.0-ubuntu
+
+strimzi-operator:
+  replicas: 2
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+
+opensearch-operator:
+  manager:
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 250m
+      limits:
+        memory: 1Gi
+        cpu: 1000m
+
+minio:
+  main:
+    replicas: 4
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 1000m
+      limits:
+        memory: 4Gi
+        cpu: 4000m
+    requests:
+      storage: 100Gi
+  backup:
+    enable: true
+    replicas: 4
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 1000m
+      limits:
+        memory: 4Gi
+        cpu: 4000m
+    requests:
+      storage: 100Gi
+
+opensearch:
+  general:
+    replicas: 3
+  nodes:
+    diskSize: 100Gi
+    resources:
+      requests:
+        memory: 8Gi
+        cpu: 4000m
+      limits:
+        memory: 12Gi
+        cpu: 8000m
+    env:
+    - name: cluster.initial_master_nodes
+      value: azul-opensearch-nodes-0,azul-opensearch-nodes-1,azul-opensearch-nodes-2
+    - name: discovery.seed_hosts
+      value: azul-opensearch-nodes-0,azul-opensearch-nodes-1,azul-opensearch-nodes-2
+    - name: OPENSEARCH_JAVA_OPTS
+      value: -Xms6g -Xmx6g
+    - name: OPENSEARCH_PROBE_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: azul-cluster-admincredentials
+          key: username
+    - name: OPENSEARCH_PROBE_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: azul-cluster-admincredentials
+          key: password
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+  dashboard:
+    replicas: 2
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 1000m
+      limits:
+        memory: 4Gi
+        cpu: 2000m
+
+kafka:
+  replicas: 3
+  resources:
+    requests:
+      memory: 4Gi
+      cpu: 2000m
+    limits:
+      memory: 6Gi
+      cpu: 4000m
+  jvmOptions:
+    -Xms: 2g
+    -Xmx: 2g
+  storage:
+    size: 100Gi
+  clusterConfig:
+    offsets.topic.replication.factor: 3
+    transaction.state.log.replication.factor: 3
+    transaction.state.log.min.isr: 2
+    default.replication.factor: 3
+    min.insync.replicas: 2
+    num.io.threads: 8
+    num.network.threads: 6
+    num.partitions: 12
+    num.replica.fetchers: 4
+    unclean.leader.election.enable: false
+
+keycloak:
+  replicas: 3
+  resources:
+    requests:
+      memory: 2Gi
+      cpu: 1000m
+    limits:
+      memory: 4Gi
+      cpu: 2000m
+  postgres:
+    size: 50Gi
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 1000m
+      limits:
+        memory: 4Gi
+        cpu: 2000m
+
+kube-prometheus-stack:
+  prometheus:
+    prometheusSpec:
+      retention: 30d
+      retentionSize: 90GB
+      resources:
+        requests:
+          memory: 4Gi
+          cpu: 1000m
+        limits:
+          memory: 8Gi
+          cpu: 4000m
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: longhorn
+            accessModes:
+            - ReadWriteOnce
+            resources:
+              requests:
+                storage: 100Gi
+
+grafana:
+  persistence:
+    size: 50Gi
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+
+loki:
+  singleBinary:
+    replicas: 3
+    persistence:
+      size: 100Gi
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 1000m
+      limits:
+        memory: 4Gi
+        cpu: 2000m

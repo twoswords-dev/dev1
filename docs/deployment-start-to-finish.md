@@ -11,6 +11,7 @@ See also:
 - `docs/company-multi-san-ingress-tls.md` for using one company multi-SAN
   certificate across Azul, Keycloak, OpenSearch Dashboards, and MinIO ingresses.
 - `docs/homelab-flow.md` for the local cert-manager CA to Windows trust flow.
+- `docs/airgap-2.0-scaling.md` for the scaled airgapped branch/profile.
 
 ## Applications
 

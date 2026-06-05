@@ -1,0 +1,250 @@
+# Airgap 2.0 scaled Azul app overrides.
+#
+# This file is layered on top of azul/values.yaml by argocd/azul-application.yaml
+# on branch airgap-2.0. It preserves all fixes from main and scales the app for
+# a larger airgapped cluster.
+#
+# Cluster sizing target: about 80 CPU cores / 100 GiB RAM available to Azul,
+# with larger Longhorn-backed disks.
+#
+# Airgap registry placeholders (intentionally commented out until registry is known):
+# imagePullSecrets:
+# - name: airgap-registry-pull-secret
+#
+# Example image overrides to fill later once images are mirrored:
+# images:
+#   dispatcher: registry.airgap.local/asdazul/dispatcher:10.0.0
+#   restapi: registry.airgap.local/asdazul/restapi-server:10.0.0
+#   webui: registry.airgap.local/asdazul/webui:10.0.0
+#   docs: registry.airgap.local/asdazul/docs:10.0.0
+# redis:
+#   image:
+#     registry: registry.airgap.local
+#     repository: redis
+#     tag: 8.6.1-trixie
+
+coreHPA:
+  averageUtilization: 70
+  minReplicas: 2
+  maxReplicas: 6
+pluginHPA:
+  averageUtilization: 70
+  minReplicas: 2
+  maxReplicas: 10
+  maxQueueLength: 500
+pluginSyncHPA:
+  averageUtilization: 70
+  minReplicas: 2
+  maxReplicas: 10
+  maxQueueLength: 500
+
+external:
+  kafka:
+    topicDefaultReplicas: 3
+    topicDefaultPartitions: 12
+
+redis:
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  pvcSize: 20Gi
+
+apiServices:
+  smartStringFilter:
+    replicas: 2
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+
+stats:
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 2Gi
+      cpu: 2000m
+
+burrow:
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+
+scaler:
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+recovery:
+  backup:
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 1000m
+      limits:
+        memory: 4Gi
+        cpu: 2000m
+  restore:
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 1000m
+      limits:
+        memory: 4Gi
+        cpu: 2000m
+
+web:
+  replicas: 2
+
+dispatcher:
+  config:
+    metastore:
+      events:
+        replicas: 3
+        pdb:
+          enabled: true
+          minAvailable: 2
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 500m
+          limits:
+            memory: 2Gi
+            cpu: 2000m
+      streams:
+        replicas: 3
+        pdb:
+          enabled: true
+          minAvailable: 2
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 500m
+          limits:
+            memory: 2Gi
+            cpu: 2000m
+    plugin:
+      events:
+        replicas: 3
+        pdb:
+          enabled: true
+          minAvailable: 2
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 500m
+          limits:
+            memory: 2Gi
+            cpu: 2000m
+      streams:
+        replicas: 3
+        pdb:
+          enabled: true
+          minAvailable: 2
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 500m
+          limits:
+            memory: 2Gi
+            cpu: 2000m
+
+lostTasks:
+  replicas: 2
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+
+metastore:
+  status_index:
+    number_of_shards: 3
+    number_of_replicas: 1
+  plugin_index:
+    number_of_shards: 3
+    number_of_replicas: 1
+  instances:
+    ageoff:
+      minReplicas: 2
+      maxReplicas: 6
+      resources:
+        requests:
+          memory: 1Gi
+          cpu: 500m
+        limits:
+          memory: 2Gi
+          cpu: 2000m
+    ingest-binary:
+      minReplicas: 2
+      maxReplicas: 8
+      resources:
+        requests:
+          memory: 1Gi
+          cpu: 500m
+        limits:
+          memory: 2Gi
+          cpu: 2000m
+    ingest-plugin:
+      minReplicas: 2
+      maxReplicas: 8
+      resources:
+        requests:
+          memory: 1Gi
+          cpu: 500m
+        limits:
+          memory: 2Gi
+          cpu: 2000m
+    ingest-status:
+      minReplicas: 2
+      maxReplicas: 8
+      resources:
+        requests:
+          memory: 1Gi
+          cpu: 500m
+        limits:
+          memory: 2Gi
+          cpu: 2000m
+
+restapi:
+  minReplicas: 3
+  maxReplicas: 8
+  pdb:
+    enabled: true
+    minAvailable: 2
+  resources:
+    requests:
+      memory: 2Gi
+      cpu: 1000m
+    limits:
+      memory: 4Gi
+      cpu: 4000m
+  logPvcSize: 50Gi
+  purgePvcSize: 100Gi
+
+docs:
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
