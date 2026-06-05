@@ -220,6 +220,7 @@ opensearch:
       opensearch_security.openid.connect_url: https://keycloak.azul-infra.svc.cluster.local/realms/azul/.well-known/openid-configuration
       opensearch_security.openid.client_id: opensearch-dashboards
       opensearch_security.openid.client_secret: ${OPENSEARCH_DASHBOARDS_CLIENT_SECRET}
+      opensearch_security.openid.root_ca: /usr/share/opensearch-dashboards/config/certs/ca-certificates
       opensearch_security.openid.base_redirect_url: https://opensearch-dashboards.local
   internalUsers:
     _meta:

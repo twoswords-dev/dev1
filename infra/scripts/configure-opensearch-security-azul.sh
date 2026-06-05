@@ -293,6 +293,7 @@ opensearch_security.openid.scope: "openid profile email offline_access"
 opensearch_security.openid.connect_url: "$KEYCLOAK_OIDC_URL/realms/$KEYCLOAK_REALM/.well-known/openid-configuration"
 opensearch_security.openid.client_id: "$DASHBOARDS_CLIENT_ID"
 opensearch_security.openid.client_secret: "$DASHBOARDS_CLIENT_SECRET"
+opensearch_security.openid.root_ca: /usr/share/opensearch-dashboards/config/certs/ca-certificates
 opensearch_security.openid.base_redirect_url: "$DASHBOARDS_URL"
 EOF
 kubectl -n "$INFRA_NAMESPACE" create configmap "$DASHBOARDS_CONFIGMAP" \
