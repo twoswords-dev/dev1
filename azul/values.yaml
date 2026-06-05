@@ -63,7 +63,9 @@ secrets:
 external:
   opensearch:
     endpoint: https://azul-opensearch.azul-infra.svc.cluster.local:9200
-    username: admin
+    # configure-opensearch-security-azul.sh creates this least-privilege user
+    # and updates metastore-creds.writer to the matching password.
+    username: azul_writer
     partition: homelab01
     versionSuffix: '0'
   filestore:
