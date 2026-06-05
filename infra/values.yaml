@@ -185,7 +185,12 @@ opensearch:
       annotations:
         cert-manager.io/issuer: azul-infra-ca
         nginx.ingress.kubernetes.io/ssl-redirect: 'true'
-    env: []
+    env:
+    - name: OPENSEARCH_DASHBOARDS_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: opensearch-dashboards-oidc
+          key: client-secret
     additionalVolumes:
     - name: additional-certs
       path: /usr/share/opensearch-dashboards/config/certs
@@ -209,7 +214,12 @@ opensearch:
       opensearch.ssl.verificationMode: none
       opensearch.requestHeadersWhitelist: '["Authorization", "security_tenant", "securitytenant"]'
       opensearch_security.cookie.secure: 'true'
-      opensearch_security.auth.type: basicauth
+      opensearch_security.auth.type: openid
+      opensearch_security.openid.scope: openid profile email offline_access
+      opensearch_security.openid.connect_url: https://keycloak.local/realms/azul/.well-known/openid-configuration
+      opensearch_security.openid.client_id: opensearch-dashboards
+      opensearch_security.openid.client_secret: ${OPENSEARCH_DASHBOARDS_CLIENT_SECRET}
+      opensearch_security.openid.base_redirect_url: https://opensearch-dashboards.local
   internalUsers:
     _meta:
       type: internalusers
@@ -619,6 +629,7 @@ opensearch:
           index: .kibana
           sign_in_options:
           - BASIC
+          - OPENID
         authc:
           basic_internal_auth_domain:
             description: Authenticate via HTTP Basic against internal users database
@@ -630,6 +641,23 @@ opensearch:
               challenge: false
             authentication_backend:
               type: intern
+          openid_auth_domain:
+            http_enabled: true
+            transport_enabled: true
+            order: 1
+            http_authenticator:
+              type: openid
+              challenge: false
+              config:
+                subject_key: preferred_username
+                roles_key: roles
+                openid_connect_url: https://keycloak.local/realms/azul/.well-known/openid-configuration
+                openid_connect_idp.enable_ssl: true
+                openid_connect_idp.verify_hostnames: true
+                openid_connect_idp.pemtrustedcas_filepath: /usr/share/opensearch/config/certs/ca-certificates
+            authentication_backend:
+              type: noop
+              config: {}
         filtered_alias_mode: warn
         do_not_fail_on_forbidden: false
         http:

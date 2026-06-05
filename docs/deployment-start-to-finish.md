@@ -163,11 +163,15 @@ Run after OpenSearch, Keycloak, and Azul restapi are ready:
 infra/scripts/configure-opensearch-security-azul.sh
 ```
 
-This script switches Azul from the bootstrap `admin` OpenSearch account to the
-least-privilege `azul_writer` account. If you run it manually, restart the Azul
-pods after Argo has synced the matching `external.opensearch.username` value:
+The OpenSearch OIDC settings are kept in `infra/values*.yaml`; the script fills
+in runtime state that cannot be committed safely, including Keycloak client
+secrets, OpenSearch role mappings/users, and app-side secrets. It switches Azul
+from the bootstrap `admin` OpenSearch account to the least-privilege
+`azul_writer` account. After it runs, refresh the Azul CA bundle and restart the
+pods that talk to OpenSearch:
 
 ```bash
+scripts/update-azul-app-ca-bundle.sh
 kubectl -n azul-app rollout restart deploy/ms-ingest-binary deploy/ms-ingest-status deploy/ms-ageoff sts/restapi
 ```
 
@@ -213,4 +217,6 @@ scripts/update-azul-app-ca-bundle.sh
 kubectl -n azul-app rollout restart deploy,sts
 KEYCLOAK_URL=https://keycloak.local AZUL_URL=https://azul.local OPENSEARCH_DASHBOARDS_URL=https://opensearch-dashboards.local infra/scripts/configure-keycloak-azul.sh
 infra/scripts/configure-opensearch-security-azul.sh
+scripts/update-azul-app-ca-bundle.sh
+kubectl -n azul-app rollout restart deploy/ms-ingest-binary deploy/ms-ingest-status deploy/ms-ageoff sts/restapi
 ```

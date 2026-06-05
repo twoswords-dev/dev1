@@ -14,6 +14,16 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: azul-infra
+  ignoreDifferences:
+    # configure-opensearch-security-azul.sh appends the runtime-generated
+    # azul-infra CA into the OpenSearch CA bundle so OpenSearch can validate
+    # Keycloak TLS without committing generated CA material.
+    - group: ""
+      kind: ConfigMap
+      name: azul-opensearch-certs
+      namespace: azul-infra
+      jsonPointers:
+        - /data/ca-certificates
   syncPolicy:
     automated:
       prune: false
