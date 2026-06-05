@@ -23,6 +23,8 @@ spec:
       namespace: azul-app
       jsonPointers:
         - /data/ca.crt
+      jqPathExpressions:
+        - '.data["ca.crt"]'
   syncPolicy:
     automated:
       prune: false
@@ -31,3 +33,4 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true
+      - RespectIgnoreDifferences=true

@@ -24,6 +24,8 @@ spec:
       namespace: azul-infra
       jsonPointers:
         - /data/ca-certificates
+      jqPathExpressions:
+        - '.data["ca-certificates"]'
   syncPolicy:
     automated:
       prune: false
@@ -32,3 +34,4 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true
+      - RespectIgnoreDifferences=true
