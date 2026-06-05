@@ -155,7 +155,8 @@ kubectl apply -f creds.yaml
 The committed `creds.yaml` uses explicit `azul-infra` namespaces so secrets are
 created where the chart/operator expects them. OpenSearch Dashboards starts with
 basic auth during bootstrap; OIDC is enabled later by
-`infra/scripts/configure-opensearch-security-azul.sh`.
+`infra/scripts/configure-opensearch-security-azul.sh`. Its Ingress includes
+larger nginx proxy header buffers for OIDC callback/session headers.
 
 - After activating the Helm chart, ensure Azul application pods trust the CA that
   issued OpenSearch and Keycloak certificates. In the Azul core chart this is the

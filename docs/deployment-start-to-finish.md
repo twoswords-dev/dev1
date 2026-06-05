@@ -65,7 +65,10 @@ The secret manifests include explicit namespaces (`azul-infra` and `azul-app`).
 runtime CA bundles. Infra TLS is issued by cert-manager from `azul-infra-ca`.
 During bootstrap, OpenSearch Dashboards uses basic auth and disables TLS verification to OpenSearch until the runtime CA bundle/OIDC script has been applied. OpenSearch Dashboards starts with basic auth during bootstrap. The Keycloak and
 OpenSearch configuration scripts later switch it to OIDC and create/update the
-`opensearch-dashboards-oidc` secret with the real client secret.
+`opensearch-dashboards-oidc` secret with the real client secret. The Dashboards
+Ingress sets larger nginx proxy header buffers because OIDC login can return
+large session cookies; without those annotations the callback may fail with
+`502 upstream sent too big header`.
 
 These contain live base64-encoded non-certificate values for this environment. To rotate instead, set explicit values and run:
 
@@ -167,7 +170,8 @@ The OpenSearch OIDC settings are kept in `infra/values*.yaml`; the script fills
 in runtime state that cannot be committed safely, including Keycloak client
 secrets, OpenSearch role mappings/users, and app-side secrets. It switches Azul
 from the bootstrap `admin` OpenSearch account to the least-privilege
-`azul_writer` account. After it runs, refresh the Azul CA bundle and restart the
+`azul_writer` account. The committed app secret defaults now match this writer
+password so Argo does not revert Azul back to an invalid bootstrap password. After it runs, refresh the Azul CA bundle and restart the
 pods that talk to OpenSearch:
 
 ```bash
