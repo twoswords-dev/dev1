@@ -152,6 +152,9 @@ Apply with:
 kubectl apply -f creds.yaml
 ```
 
+The committed `creds.yaml` uses explicit `azul-infra` namespaces so secrets are
+created where the chart/operator expects them.
+
 - After activating the Helm chart, ensure Azul application pods trust the CA that
   issued OpenSearch and Keycloak certificates. In the Azul core chart this is the
   ConfigMap named by `CACertificateConfigMap` (for k3s: `azul-ca-bundle` in
@@ -175,6 +178,11 @@ kubectl apply -f creds.yaml
   The Argo CD `azul` Application ignores `/data/ca.crt` on `azul-ca-bundle` so
   this runtime-generated CA is not removed by self-heal. Do not commit generated
   cluster CA material into `azul/ca-certificates`.
+
+The k3s OpenSearch node startup probe checks only that localhost port 9200 is
+listening. The readiness probe uses the admin credentials after securityadmin has
+initialized the security index; this avoids a startup-probe/securityadmin
+catch-22 during first boot.
 
 **IMPORTANT**: The OpenSearch Operator does not currently support hot
 certificate rotation. While Cert Manager will automatically

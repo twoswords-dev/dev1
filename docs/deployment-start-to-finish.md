@@ -59,6 +59,8 @@ kubectl apply -f infra/creds.yaml
 kubectl apply -f azul/creds.yaml
 ```
 
+The secret manifests include explicit namespaces (`azul-infra` and `azul-app`).
+
 `creds.yaml` intentionally does **not** contain hard-coded TLS certificates or
 runtime CA bundles. Infra TLS is issued by cert-manager from `azul-infra-ca`.
 The `opensearch-dashboards-oidc` secret in `infra/creds.yaml` is only a
@@ -93,7 +95,9 @@ kubectl -n azul-infra get pods
 ```
 
 OpenSearch may log `OpenSearch Security not initialized` during first boot; that
-is expected until the operator security-config job completes.
+is expected until the operator security-config job completes. The startup probe
+only checks that port 9200 is listening so it does not restart OpenSearch before
+securityadmin has a chance to initialize the security index.
 
 ## 5. Create Azul external web TLS secret
 

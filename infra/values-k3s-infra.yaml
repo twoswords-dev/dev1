@@ -126,7 +126,7 @@ opensearch:
         command:
         - /bin/bash
         - -c
-        - curl -k --fail --silent --user "$OPENSEARCH_PROBE_USERNAME:$OPENSEARCH_PROBE_PASSWORD" https://localhost:9200 >/dev/null
+        - timeout 2 bash -c '</dev/tcp/127.0.0.1/9200'
       readiness:
         command:
         - /bin/bash
