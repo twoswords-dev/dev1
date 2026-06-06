@@ -153,8 +153,21 @@ Current browser-facing ingress TLS secrets are:
 
 ## Apply the same multi-SAN cert to all browser-facing ingresses
 
-After building `fullchain.crt` and confirming `company.key` matches it, create or
-update the relevant Kubernetes TLS secrets.
+After building `fullchain.crt` and confirming `company.key` matches it, use the
+post-working helper script:
+
+```bash
+TLS_CERT_FILE=./fullchain.crt \
+TLS_KEY_FILE=./company.key \
+scripts/post-working-external-cert.sh
+```
+
+The script updates the expected browser-facing TLS secrets and removes local
+cert-manager issuer annotations from the live browser-facing Ingresses so the
+manual company secrets are not overwritten.
+
+If you prefer manual commands, create or update the relevant Kubernetes TLS
+secrets directly:
 
 ```bash
 # Azul external browser TLS
