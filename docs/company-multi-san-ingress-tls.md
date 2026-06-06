@@ -123,20 +123,81 @@ The hashes must match.
 
 ## Build the served full chain
 
-The ingress TLS secret should contain the leaf certificate plus intermediate(s):
+The ingress TLS secret should contain the **leaf/server certificate first**,
+followed by the **issuing/intermediate CA certificate(s)**.
+
+A full chain is not a new certificate; it is a PEM text file made by concatenating
+certificates in the correct order.
+
+### 1. Convert any DER `.cer` files to PEM if needed
+
+Many company `.cer` files are DER encoded. Convert them before concatenating:
 
 ```bash
-cat company.crt company-intermediate.cer > fullchain.crt
+openssl x509 -inform DER -in company.cer -out company.crt
+openssl x509 -inform DER -in company-intermediate.cer -out company-intermediate.crt
 ```
 
-If there are multiple intermediates, include them in chain order:
+If a file is already PEM encoded, this is enough:
+
+```bash
+cp company.cer company.crt
+cp company-intermediate.cer company-intermediate.crt
+```
+
+You can tell PEM files because they contain:
+
+```text
+-----BEGIN CERTIFICATE-----
+```
+
+### 2. Concatenate leaf first, then intermediate(s)
+
+For a single intermediate:
+
+```bash
+cat company.crt company-intermediate.crt > fullchain.crt
+```
+
+For multiple intermediates, include them in chain order from leaf upward:
 
 ```bash
 cat company.crt issuing-intermediate.crt higher-intermediate.crt > fullchain.crt
 ```
 
 Do not normally include the root CA in `fullchain.crt` unless company PKI
-explicitly requires it.
+explicitly requires it. Root CAs are normally installed/trusted on clients, not
+served by the web server.
+
+### 3. Inspect the full chain
+
+```bash
+awk 'BEGIN{n=0}/BEGIN CERTIFICATE/{n++}{print > ("/tmp/company-chain-" n ".crt")}' fullchain.crt
+for f in /tmp/company-chain-*.crt; do
+  echo "=== $f ==="
+  openssl x509 -in "$f" -noout -subject -issuer -dates
+ done
+```
+
+The first certificate should be the service cert containing the SANs. The next
+certificate(s) should be company issuing/intermediate CA(s).
+
+### 4. Optional chain verification
+
+If you have the company root CA separately:
+
+```bash
+openssl verify \
+  -CAfile company-root.crt \
+  -untrusted company-intermediate.crt \
+  company.crt
+```
+
+Expected output:
+
+```text
+company.crt: OK
+```
 
 ## Kubernetes secrets used by current charts
 

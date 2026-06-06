@@ -15,6 +15,21 @@ Required:
   TLS_CERT_FILE=/path/to/company-fullchain.crt
   TLS_KEY_FILE=/path/to/company.key
 
+How to build company-fullchain.crt:
+  # If company.cer is DER, convert it first. If already PEM, cp is fine.
+  openssl x509 -inform DER -in company.cer -out company.crt
+  # or:
+  cp company.cer company.crt
+
+  # Concatenate leaf first, then issuing/intermediate CA(s).
+  cat company.crt company-issuing-intermediate.crt > company-fullchain.crt
+
+  # If there are multiple intermediates, keep chain order from leaf upward:
+  cat company.crt issuing-intermediate.crt higher-intermediate.crt > company-fullchain.crt
+
+  # Do not normally include the root CA in the served fullchain unless company
+  # PKI explicitly requires it. Root CA is for client trust, not usually served.
+
 Optional environment variables:
   APP_NAMESPACE=azul-app
   INFRA_NAMESPACE=azul-infra
